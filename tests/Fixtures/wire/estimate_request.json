@@ -1,0 +1,9 @@
+{
+    "ca": {
+        "caVente": 1000,
+        "caLocation": 2000,
+        "caPrestationService": 3000,
+        "caPrestationAutres": 4000,
+        "recettesCipav": 0
+    }
+}

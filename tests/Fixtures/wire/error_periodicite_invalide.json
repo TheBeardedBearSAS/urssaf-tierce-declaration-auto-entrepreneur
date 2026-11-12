@@ -1,0 +1,5 @@
+{
+    "code": "PERIODICITE_INVALIDE",
+    "message": "Périodicité invalide",
+    "description": "La périodicité ne correspond pas à celle connue du compte"
+}

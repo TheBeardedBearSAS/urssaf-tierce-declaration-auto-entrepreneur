@@ -1,0 +1,16 @@
+{
+    "rum": "T1234567891234567891234568912345678",
+    "nomBanque": "string",
+    "iban": "FR0012345123451234567891A12",
+    "titulaireCompte": "Maxime LEFORESTIER",
+    "siret": "12345678912345",
+    "creancier": {
+        "nom": "URSSAF Bretagne",
+        "ics": "FR99000154431",
+        "adresse1": "6 rue Robert d’Arbrissel",
+        "adresse2": "",
+        "codePostal": "35052",
+        "pays": "FRANCE",
+        "ville": "Rennes cedex 9 "
+    }
+}

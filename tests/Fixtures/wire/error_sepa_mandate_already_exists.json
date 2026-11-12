@@ -1,0 +1,5 @@
+{
+    "code": "ERREUR_MANDAT_ALREADYEXIST",
+    "message": "Mandat déjà actif pour le siret 'xxx' et l'iban 'FR763000100xxxxxxxxxxxxxxxxx'.",
+    "description": "Un mandat est déjà actif pour ce compte et cet iban."
+}

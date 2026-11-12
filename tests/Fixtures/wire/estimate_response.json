@@ -1,0 +1,19 @@
+{
+    "montants": {
+        "montantTotal": 1678,
+        "montantVente": 128,
+        "montantLocation": 0,
+        "montantPrestationService": 660,
+        "montantPrestationAutres": 880,
+        "montantFormationProfessionnelle": 10,
+        "montantCipav": 0,
+        "taxeCMAVente": 0,
+        "taxeCMAService": 0,
+        "taxeCCIVente": 0,
+        "taxeCCIService": 0
+    },
+    "periode": {
+        "annee": "2019",
+        "trimestre": "1"
+    }
+}

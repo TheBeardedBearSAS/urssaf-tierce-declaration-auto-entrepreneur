@@ -1,0 +1,5 @@
+{
+    "code": "SIRET_DEJA_MANDATE",
+    "message": "Le SIRET est déjà mandaté",
+    "description": "Il existe déjà un autre établissement mandataire pour ce SIRET"
+}

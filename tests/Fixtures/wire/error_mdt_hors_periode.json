@@ -1,0 +1,5 @@
+{
+    "code": "MDT_HORS_PERIODE",
+    "message": "Déclaration/Estimation hors période validité mandat",
+    "description": "Une estimation ou une déclaration a été transmise pour une période non couverte par le mandat de tierce déclaration"
+}

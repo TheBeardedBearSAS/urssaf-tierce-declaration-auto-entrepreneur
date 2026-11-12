@@ -1,0 +1,12 @@
+{
+    "bic": "ABCDEFGHIJK",
+    "iban": "FR0012345123451234567891A12",
+    "titulaireCompte": "Maxime LEFORESTIER",
+    "adresse1": "13 boulevard vauban",
+    "adresse2": "13 boulevard vauban",
+    "codePostal": "59000",
+    "pays": "FRANCE",
+    "ville": "LILLE",
+    "siret": "12345678912345",
+    "nir": "180107500500623"
+}

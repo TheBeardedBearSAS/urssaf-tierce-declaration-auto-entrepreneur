@@ -1,0 +1,18 @@
+{
+    "montants": {
+        "montantTotal": 1678,
+        "montantVente": 128,
+        "montantLocation": 0,
+        "montantPrestationService": 660,
+        "montantPrestationAutres": 880,
+        "montantFormationProfessionnelle": 10,
+        "montantCipav": 0,
+        "taxeCMAVente": 0,
+        "taxeCMAService": 0,
+        "taxeCCIVente": 0,
+        "taxeCCIService": 0
+    },
+    "dateExigibilite": "2020-01-31",
+    "certificat": "56335826",
+    "idDeclaration": "W1dl9W2Oa4R6ab3UlQAqxF3"
+}

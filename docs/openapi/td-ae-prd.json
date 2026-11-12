@@ -1,0 +1,1058 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "L’API Tierce Declaration auto-entrepreneur permet, pour le compte d'un auto-entrepreneur, d’acceder aux services de declaration, d’obtention des montants des cotisations et contributions sociales des organismes de recouvrement concernes et d’ordonner le paiement desdites cotisations et contributions.",
+    "version" : "1.5.1",
+    "title" : "API Tierce Declaration auto-entrepreneur"
+  },
+  "basePath" : "/tiersdecl/v1/ae",
+  "security" : [ {
+    "securityHeader" : [ ]
+  } ],
+  "paths" : {
+    "/comptes" : {
+      "get" : {
+        "tags" : [ "Compte" ],
+        "summary" : "API020 - Recuperation de compte URSSAF AE",
+        "description" : "Ce service permet de rechercher un compte Auto Entrepreneur a partir de son SIRET ou son NIR et d'obtenir le statut de son habilitation aux services de Tierce Declaration ainsi que sa periodicite declarative.",
+        "operationId" : "rechercherCompteAE",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Compte trouve",
+            "schema" : {
+              "$ref" : "#/definitions/Compte"
+            }
+          },
+          "400" : {
+            "description" : "Pas de compte AE Actif, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      }
+    },
+    "/mandats" : {
+      "post" : {
+        "tags" : [ "Compte" ],
+        "summary" : "API030 - Notification de mandat de tierce declaration",
+        "description" : "Ce service permet de notifier l'URSSAF de l'enregistrement d'un mandat de tiers declarant obtenu par la plateforme pour cet individu.",
+        "operationId" : "enregistrerMandatAE",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        }, {
+          "name" : "dateNaissance",
+          "in" : "query",
+          "description" : "1975-10-01",
+          "required" : true,
+          "type" : "string",
+          "format" : "date"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mandat ajoute"
+          },
+          "400" : {
+            "description" : "Compte inconnu, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Compte" ],
+        "summary" : "API031 - Annulation de mandat de tierce declaration",
+        "description" : "Ce service permet de notifier l'URSSAF de l'annulation d'un mandat de tiers declarant obtenu par la plateforme pour cet individu.",
+        "operationId" : "annulerMandatAE",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        }, {
+          "name" : "dateNaissance",
+          "in" : "query",
+          "description" : "1975-10-01",
+          "required" : true,
+          "type" : "string",
+          "format" : "date"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Mandat annule"
+          },
+          "400" : {
+            "description" : "Compte inconnu, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      }
+    },
+    "/estimer" : {
+      "post" : {
+        "tags" : [ "Cotisations" ],
+        "summary" : "API040 - Estimation des cotisations sociales",
+        "description" : "Ce service effectue une estimation des cotisations sociales du a l'URSSAF pour le compte et les chiffres d’affaires passes en parametre.",
+        "operationId" : "estimerCotisationsAE",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        }, {
+          "in" : "body",
+          "name" : "ca",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/InputEstimation"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Calcul effectue",
+            "schema" : {
+              "$ref" : "#/definitions/OutputEstimations"
+            }
+          },
+          "400" : {
+            "description" : "Compte inconnu, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      }
+    },
+    "/declarer" : {
+      "post" : {
+        "tags" : [ "Cotisations" ],
+        "summary" : "API050 - Teledeclaration de chiffres d'affaires",
+        "description" : "Ce service effectue la declaration de chiffres d’affaires pour le compte de l’auto-entrepreneur identifie par son NIR ou son SIRET, et retourne les montants de cotisations sociales dues pour la periode.",
+        "operationId" : "declarerCotisationsAE",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        }, {
+          "in" : "body",
+          "name" : "ca",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/InputDeclaration"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Declaration effectuee",
+            "schema" : {
+              "$ref" : "#/definitions/OutputDeclarations"
+            }
+          },
+          "400" : {
+            "description" : "Compte inconnu, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      }
+    },
+    "/payer" : {
+      "post" : {
+        "tags" : [ "Cotisations" ],
+        "summary" : "API060 - Telepaiement SEPA",
+        "description" : "Ce service intialise un telepaiement SEPA par l'Urssaf sur l'IBAN passe en parametre.",
+        "operationId" : "payerCotisationsAE",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 13
+        }, {
+          "in" : "body",
+          "name" : "paiement",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/InputTelepaiement"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Paiement enregistre",
+            "schema" : {
+              "$ref" : "#/definitions/OutputTelepaiements"
+            }
+          },
+          "400" : {
+            "description" : "Compte inconnu, requete incorrecte ou erreur fonctionnelle",
+            "schema" : {
+              "$ref" : "#/definitions/Erreur"
+            }
+          },
+          "401" : {
+            "description" : "Token d'authentification absent ou invalide"
+          },
+          "403" : {
+            "description" : "Authentification refusee"
+          },
+          "500" : {
+            "description" : "Erreur technique"
+          }
+        }
+      }
+    },
+    "/sepa/mandats" : {
+      "post" : {
+        "tags" : [ "Mandats SEPA" ],
+        "summary" : "API070 - Enregistrement d'un mandat SEPA pour un compte identifie par son siret ou nir",
+        "description" : "Ce service permet d'enregistrer un mandat SEPA pour un compte identifie par son siret ou nir",
+        "operationId" : "post-mandat-by-compte",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "description" : "body compose des parametres permettant l'ajout d'un mandat SEPA",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/MandatSepaToAdd"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK - mandat SEPA ajoute ",
+            "schema" : {
+              "$ref" : "#/definitions/MandatSepa"
+            }
+          },
+          "400" : {
+            "description" : "erreur fonctionnelle",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "401" : {
+            "description" : "erreur de droit d'acces - Non Autorise",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "404" : {
+            "description" : "Ressource n'a pas ete trouvee",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "409" : {
+            "description" : "Ressource deja existante",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "500" : {
+            "description" : "erreur technique",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sepa/mandats/{siret}/{rum}" : {
+      "delete" : {
+        "tags" : [ "Mandats SEPA" ],
+        "summary" : "API071 - Revocation d'un mandat SEPA d'un compte",
+        "description" : "Ce service permet de revoquer (minimum date du jour + 1) un mandat SEPA d'un compte grace a son siret et l'identifiant unique du mandat SEPA (RUM)",
+        "operationId" : "delete-mandat-by-compte",
+        "parameters" : [ {
+          "name" : "dateEffet",
+          "in" : "query",
+          "description" : "date d'effet de la revocation (yyyy-mm-dd). Date minimum = date du jour + 1",
+          "required" : false,
+          "type" : "string",
+          "format" : "date"
+        }, {
+          "name" : "siret",
+          "in" : "path",
+          "description" : "siret identifiant un compte",
+          "required" : true,
+          "type" : "string",
+          "maxLength" : 14,
+          "minLength" : 14
+        }, {
+          "name" : "rum",
+          "in" : "path",
+          "description" : "identifiant unique du mandat SEPA",
+          "required" : true,
+          "type" : "string",
+          "maxLength" : 35
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "OK - mandat SEPA revoque"
+          },
+          "400" : {
+            "description" : "erreur fonctionnelle",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "401" : {
+            "description" : "erreur de droit d'acces - Non Autorise",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "404" : {
+            "description" : "Ressource n'a pas ete trouvee",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "500" : {
+            "description" : "erreur technique",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sepa/mandats/rechercher" : {
+      "get" : {
+        "tags" : [ "Mandats SEPA" ],
+        "summary" : "API075 - Recuperation de la liste des mandats SEPA rattaches a un compte a partir de son siret ou nir",
+        "description" : "Ce service permet de recuperer la liste des mandats SEPA rattaches a un compte a partir d'un siret ou d'un nir",
+        "operationId" : "get-mandats-by-compte",
+        "parameters" : [ {
+          "name" : "siret",
+          "in" : "query",
+          "description" : "siret rattache au compte permettant la recherche de mandats SEPA",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 14,
+          "minLength" : 14
+        }, {
+          "name" : "nir",
+          "in" : "query",
+          "description" : "numero de securite sociale rattache a un compte permettant la recherche de mandats SEPA",
+          "required" : false,
+          "type" : "string",
+          "maxLength" : 15,
+          "minLength" : 13
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK - liste des mandats SEPA avec iban anonymise",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/MandatSepa"
+              }
+            }
+          },
+          "400" : {
+            "description" : "erreur fonctionnelle",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "401" : {
+            "description" : "erreur de droit d'acces - Non Autorise ",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "404" : {
+            "description" : "Ressource n'a pas ete trouvee",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          },
+          "500" : {
+            "description" : "erreur technique",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/ErreurType"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "securityHeader" : {
+      "description" : "Jeton d'authentification obligatoire (Oauth2 Client Credentials)",
+      "type" : "oauth2",
+      "tokenUrl" : "https://api.urssaf.fr/api/oauth/v1/token",
+      "flow" : "application",
+      "scopes" : {
+        "tiersdecl.ae" : "Acces a l'API Tierce Declaration auto-entrepreneur"
+      }
+    }
+  },
+  "definitions" : {
+    "Compte" : {
+      "type" : "object",
+      "required" : [ "mandatPresent", "periodicite" ],
+      "properties" : {
+        "mandatPresent" : {
+          "type" : "boolean",
+          "title" : "Indicateur de presence d'un mandat de tierce declaration pour ce compte et cette plateforme"
+        },
+        "periodicite" : {
+          "type" : "string",
+          "maxLength" : 1,
+          "enum" : [ "M", "T" ]
+        }
+      }
+    },
+    "CaAe" : {
+      "type" : "object",
+      "properties" : {
+        "caVente" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "CA Vente Marchandises"
+        },
+        "caLocation" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "CA Location de meuble de tourisme classe"
+        },
+        "caPrestationService" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "CA Prestations de services commerciales ou artisanales"
+        },
+        "caPrestationAutres" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : " CA Autres prestation de service, pour les professions liberales non reglementees (non affiliees CIPAV) et pour les artisans commercants faisant de la prestation de service BNC en activite secondaire."
+        },
+        "recettesCipav" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Recettes relevant de la CIPAV (uniquement pour les PL)"
+        }
+      }
+    },
+    "InputEstimation" : {
+      "type" : "object",
+      "required" : [ "ca" ],
+      "properties" : {
+        "ca" : {
+          "$ref" : "#/definitions/CaAe"
+        }
+      }
+    },
+    "InputDeclaration" : {
+      "type" : "object",
+      "required" : [ "ca", "periode" ],
+      "properties" : {
+        "ca" : {
+          "$ref" : "#/definitions/CaAe"
+        },
+        "periode" : {
+          "$ref" : "#/definitions/Periode"
+        }
+      }
+    },
+    "MontantsAe" : {
+      "type" : "object",
+      "required" : [ "montantTotal" ],
+      "properties" : {
+        "montantTotal" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant total a payer (montant total de la declaration + montant regularisation Acre - montant Deduction)"
+        },
+        "montantVente" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Vente Marchandises"
+        },
+        "montantVenteVL" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Vente Marchandises versement liberatoire"
+        },
+        "montantLocation" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Location de meuble de tourisme classe"
+        },
+        "montantLocationVL" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Location de meuble de tourisme classe versement liberatoire"
+        },
+        "montantPrestationService" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Prestations de services commerciales ou artisanales"
+        },
+        "montantPrestationServiceVL" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Prestations de services commerciales ou artisanales versement liberatoire"
+        },
+        "montantPrestationAutres" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Autres prestation de service, pour les professions liberales non reglementees (non affiliees CIPAV) et pour les artisans commercants faisant de la prestation de service BNC en activite secondaire."
+        },
+        "montantPrestationAutresVL" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour CA Autres prestation de service, pour les professions liberales non reglementees (non affiliees CIPAV) et pour les artisans commercants faisant de la prestation de service BNC en activite secondaire."
+        },
+        "montantFormationProfessionnelle" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant relevant de la Formation Professionnelle"
+        },
+        "montantCipav" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour les Recettes relavant de la CIPAV (uniquement pour les PL)"
+        },
+        "montantCipavVL" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant pour les Recettes relavant de la CIPAV versement liberatoire (uniquement pour les PL)"
+        },
+        "taxeCMAVente" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Taxe pour frais de chambre CMA sur les ventes (uniquement pour les Artisans redevables de cette taxe)"
+        },
+        "taxeCMAService" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Taxe pour frais de chambre CMA sur les prestations de services (uniquement pour les Artisans redevables de cette taxe)"
+        },
+        "taxeCCIVente" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Taxe pour frais de chambre CCI sur les ventes (uniquement pour les Commercants redevables de cette taxe)"
+        },
+        "taxeCCIService" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Taxe pour frais de chambre CCI sur les prestations de services (uniquement pour les Commercants redevables de cette taxe)"
+        },
+        "montantRegulAcre" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant de la regularisation suite depassement du plafond Acre sur la periode precedente"
+        },
+        "montantDeduction" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant a deduire"
+        }
+      }
+    },
+    "OutputEstimation" : {
+      "type" : "object",
+      "properties" : {
+        "montants" : {
+          "$ref" : "#/definitions/MontantsAe"
+        },
+        "periode" : {
+          "$ref" : "#/definitions/Periode"
+        }
+      }
+    },
+    "OutputEstimations" : {
+      "type" : "object",
+      "properties" : {
+        "OutputDeclaration" : {
+          "$ref" : "#/definitions/OutputEstimation"
+        }
+      }
+    },
+    "OutputDeclaration" : {
+      "type" : "object",
+      "required" : [ "certificat", "dateExigibilite", "idDeclaration", "montants" ],
+      "properties" : {
+        "montants" : {
+          "$ref" : "#/definitions/MontantsAe"
+        },
+        "dateExigibilite" : {
+          "type" : "string",
+          "format" : "date",
+          "example" : "2019-04-30",
+          "title" : "Date d'exigibilite de la declaration"
+        },
+        "certificat" : {
+          "type" : "string",
+          "title" : "Numero de certificat URSSAF de la declaration",
+          "pattern" : "^\\d{8}$"
+        },
+        "idDeclaration" : {
+          "type" : "string",
+          "maxLength" : 23
+        }
+      }
+    },
+    "OutputDeclarations" : {
+      "type" : "object",
+      "properties" : {
+        "OutputDeclaration" : {
+          "$ref" : "#/definitions/OutputDeclaration"
+        }
+      }
+    },
+    "InputTelepaiement" : {
+      "type" : "object",
+      "required" : [ "montant", "periode" ],
+      "properties" : {
+        "montant" : {
+          "type" : "number",
+          "format" : "int32",
+          "title" : "Montant a payer"
+        },
+        "iban" : {
+          "type" : "string",
+          "title" : "IBAN"
+        },
+        "rum" : {
+          "$ref" : "#/definitions/Rum"
+        },
+        "periode" : {
+          "$ref" : "#/definitions/Periode"
+        }
+      },
+      "title" : "",
+      "description" : ""
+    },
+    "OutputTelepaiement" : {
+      "type" : "object",
+      "required" : [ "certificat", "dateExigibilite", "periode" ],
+      "properties" : {
+        "periode" : {
+          "$ref" : "#/definitions/Periode"
+        },
+        "dateExigibilite" : {
+          "type" : "string",
+          "format" : "date",
+          "example" : "2019-04-30",
+          "title" : "Date d'exigibilite du telepaiement"
+        },
+        "certificat" : {
+          "type" : "string",
+          "title" : "Numero de certificat URSSAF du telepaiement",
+          "pattern" : "^\\d{8}$"
+        },
+        "idTelepaiement" : {
+          "type" : "string",
+          "maxLength" : 23
+        }
+      }
+    },
+    "OutputTelepaiements" : {
+      "type" : "object",
+      "properties" : {
+        "OutputTelepaiement" : {
+          "$ref" : "#/definitions/OutputTelepaiement"
+        }
+      }
+    },
+    "Periode" : {
+      "type" : "object",
+      "required" : [ "annee" ],
+      "properties" : {
+        "annee" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 2019,
+          "title" : "Annee"
+        },
+        "trimestre" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 1,
+          "description" : "saisi uniquement si periode trimestrielle",
+          "title" : "Numero de trimestre [1..4]"
+        },
+        "mois" : {
+          "type" : "integer",
+          "format" : "int32",
+          "example" : 12,
+          "description" : "saisi uniquement si periode mensuelle",
+          "title" : "Numero de mois [1..12]"
+        }
+      },
+      "description" : "represente une periode declarative mensuelle ou trimestrielle, les attributs trimestre et mois ne peuvent etre renseignes simultanement"
+    },
+    "Erreur" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "example" : "CPTE_INCONNU",
+          "title" : "Code d'erreur"
+        },
+        "message" : {
+          "type" : "string",
+          "example" : "Compte inconnu",
+          "title" : "Message d'erreur"
+        },
+        "description" : {
+          "type" : "string",
+          "example" : "L'identifiant de compte fourni en entree n'est pas reconnu par l'application",
+          "title" : "Description de l'erreur"
+        }
+      }
+    },
+    "Rum" : {
+      "type" : "string",
+      "title" : "Rum",
+      "maxLength" : 35,
+      "description" : "Identifiant unique du mandat Sepa",
+      "example" : "T1234567891234567891234568912345678"
+    },
+    "MandatSepa" : {
+      "type" : "object",
+      "properties" : {
+        "rum" : {
+          "$ref" : "#/definitions/Rum"
+        },
+        "nomBanque" : {
+          "$ref" : "#/definitions/NomBanque"
+        },
+        "iban" : {
+          "$ref" : "#/definitions/Iban"
+        },
+        "titulaireCompte" : {
+          "$ref" : "#/definitions/TitulaireCompte"
+        },
+        "siret" : {
+          "$ref" : "#/definitions/Siret"
+        },
+        "creancier" : {
+          "$ref" : "#/definitions/Creancier"
+        }
+      },
+      "description" : "objet mandat SEPA retourne par l'API lors d'un ajout ou d'une demande de consultation de mandat SEPA pour un compte"
+    },
+    "ErreurType" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string",
+          "example" : "ERR_TECH",
+          "description" : "Code de l'erreur"
+        },
+        "message" : {
+          "type" : "string",
+          "example" : "Une erreur technique/fonctionnelle est survenue",
+          "description" : "Message de l'erreur"
+        },
+        "description" : {
+          "type" : "string",
+          "example" : "Erreur Technique/Fonctionnelle",
+          "description" : "Description de l'erreur"
+        }
+      }
+    },
+    "MandatSepaToAdd" : {
+      "type" : "object",
+      "required" : [ "adresse1", "bic", "codePostal", "iban", "pays", "titulaireCompte", "ville" ],
+      "properties" : {
+        "bic" : {
+          "$ref" : "#/definitions/Bic"
+        },
+        "iban" : {
+          "$ref" : "#/definitions/Iban"
+        },
+        "titulaireCompte" : {
+          "$ref" : "#/definitions/TitulaireCompte"
+        },
+        "adresse1" : {
+          "$ref" : "#/definitions/Adresse"
+        },
+        "adresse2" : {
+          "$ref" : "#/definitions/Adresse"
+        },
+        "codePostal" : {
+          "$ref" : "#/definitions/CodePostal"
+        },
+        "pays" : {
+          "$ref" : "#/definitions/Pays"
+        },
+        "ville" : {
+          "$ref" : "#/definitions/Ville"
+        },
+        "siret" : {
+          "$ref" : "#/definitions/Siret"
+        },
+        "nir" : {
+          "$ref" : "#/definitions/Nir"
+        }
+      },
+      "title" : "",
+      "description" : "objet contenant les informations du mandat SEPA a ajouter"
+    },
+    "Bic" : {
+      "type" : "string",
+      "title" : "Bic",
+      "maxLength" : 11,
+      "description" : "Identifiant international de la banque",
+      "example" : "ABCDEFGHIJK"
+    },
+    "Iban" : {
+      "type" : "string",
+      "maxLength" : 34,
+      "description" : "Identifiant international du compte bancaire",
+      "example" : "FR0012345123451234567891A12"
+    },
+    "TitulaireCompte" : {
+      "type" : "string",
+      "title" : "TitulaireCompte",
+      "maxLength" : 80,
+      "description" : "denomination titulaire compte",
+      "example" : "Maxime LEFORESTIER"
+    },
+    "Adresse" : {
+      "type" : "string",
+      "title" : "Adresse",
+      "maxLength" : 32,
+      "description" : "",
+      "example" : "13 boulevard vauban"
+    },
+    "Ville" : {
+      "type" : "string",
+      "title" : "Ville",
+      "maxLength" : 26,
+      "description" : "",
+      "example" : "LILLE"
+    },
+    "CodePostal" : {
+      "type" : "string",
+      "title" : "CodePostal",
+      "maxLength" : 5,
+      "description" : "",
+      "example" : "59000"
+    },
+    "Pays" : {
+      "type" : "string",
+      "title" : "Pays",
+      "maxLength" : 80,
+      "description" : "",
+      "example" : "FRANCE"
+    },
+    "NomBanque" : {
+      "type" : "string",
+      "title" : "NomBanque",
+      "description" : "nom de la banque"
+    },
+    "Siret" : {
+      "type" : "string",
+      "title" : "Siret",
+      "minLength" : 14,
+      "maxLength" : 14,
+      "description" : "Siret identifiant un compte",
+      "example" : "12345678912345"
+    },
+    "Nir" : {
+      "type" : "string",
+      "title" : "Nir",
+      "minLength" : 13,
+      "maxLength" : 15,
+      "description" : "Numero de securite sociale",
+      "example" : "180107500500623"
+    },
+    "Organisme" : {
+      "type" : "string",
+      "title" : "Nom de l'Urssaf",
+      "description" : "denomination de l'Urssaf",
+      "example" : "URSSAF de BAYONNE"
+    },
+    "Ics" : {
+      "type" : "string",
+      "title" : "Ics",
+      "description" : "Identifiant creancier",
+      "example" : "FR47ZZZ142239"
+    },
+    "Creancier" : {
+      "type" : "object",
+      "properties" : {
+        "nom" : {
+          "$ref" : "#/definitions/Organisme"
+        },
+        "ics" : {
+          "$ref" : "#/definitions/Ics"
+        },
+        "adresse1" : {
+          "$ref" : "#/definitions/Adresse"
+        },
+        "adresse2" : {
+          "$ref" : "#/definitions/Adresse"
+        },
+        "codePostal" : {
+          "$ref" : "#/definitions/CodePostal"
+        },
+        "pays" : {
+          "$ref" : "#/definitions/Pays"
+        },
+        "ville" : {
+          "$ref" : "#/definitions/Ville"
+        }
+      },
+      "title" : "",
+      "description" : "objet contenant les informations du creancier"
+    }
+  },
+  "host" : "api.urssaf.fr"
+}

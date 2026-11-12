@@ -1,0 +1,5 @@
+{
+    "code": "ERR_PARAM_MULTIPLES",
+    "message": "Un seul paramètre dois être valorisé",
+    "description": "Les paramètres nir et siret sont renseignés, un seul de ces deux paramètres est attendu"
+}
