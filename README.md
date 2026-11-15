@@ -32,7 +32,7 @@ The production contract (1.5.1) is ahead of the PDF and of the sandbox contract 
 - [docs/api-reference.md](docs/api-reference.md) — technical reference (single source of truth for the package).
 - [docs/roadmap.md](docs/roadmap.md) — planned architecture and order of work.
 - [docs/openapi/](docs/openapi/) — official OpenAPI contracts (production and sandbox) from the URSSAF API portal.
-- [docs/reference/](docs/reference/) — official URSSAF documentation (PDF).
+- `docs/reference/` — official URSSAF documentation: not versioned (URSSAF documents), download it from the links in [docs/api-reference.md](docs/api-reference.md) into this local, git-ignored folder.
 - Catalogue page: https://portailapi.urssaf.fr/fr/catalogue-api/prd/td-ae
 
 ## Requirements
