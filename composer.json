@@ -1,8 +1,29 @@
 {
     "name": "thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur",
     "description": "Client and domain model for the URSSAF \"API Tierce Déclaration auto-entrepreneur\" (third-party declaration and payment for auto-entrepreneurs)",
-    "license": "proprietary",
+    "license": "MIT",
     "type": "symfony-bundle",
+    "keywords": [
+        "urssaf",
+        "api",
+        "tierce-declaration",
+        "auto-entrepreneur",
+        "micro-entrepreneur",
+        "chiffre-d-affaires",
+        "symfony-bundle"
+    ],
+    "authors": [
+        {
+            "name": "TheBeardedBear",
+            "homepage": "https://github.com/TheBeardedBearSAS"
+        }
+    ],
+    "homepage": "https://github.com/TheBeardedBearSAS/urssaf-tierce-declaration-auto-entrepreneur",
+    "support": {
+        "issues": "https://github.com/TheBeardedBearSAS/urssaf-tierce-declaration-auto-entrepreneur/issues",
+        "source": "https://github.com/TheBeardedBearSAS/urssaf-tierce-declaration-auto-entrepreneur",
+        "security": "https://github.com/TheBeardedBearSAS/urssaf-tierce-declaration-auto-entrepreneur/security/policy"
+    },
     "require": {
         "php": ">=8.2"
     },
