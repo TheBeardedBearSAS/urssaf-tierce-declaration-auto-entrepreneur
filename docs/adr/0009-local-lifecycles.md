@@ -92,3 +92,19 @@ carrying `certificat` and `idDeclaration` / `idTelepaiement`, recovered with `Re
 - A host retries by calling the same command with the same input; records never hold the IBAN, so a payment retry
   passes it again.
 - Only 020 is polled; declarations and payments leave `outcome_unknown` by operator decision only.
+
+## Amendment (2026-11-18, lead-accepted, lot 1)
+
+- **Payments: one current record per reference.** `PaymentReference` identifies a payment intent, not a row: the
+  uniqueness is "one **current** `PaymentRecord` per (tenant, `PaymentReference`)". After a `rejected` answer the same
+  reference may be sent again: `PaymentRecord::supersede()` (allowed from `rejected` only) creates a new current record
+  linked by `supersedes` / `supersededBy`, as for declarations. ADR 0016 holds the matching key table.
+- **Declarations: no supersession while submitting.** `DeclarationRecord::supersede()` is refused from `submitting`
+  (`InvalidStateTransition`), so the aggregate itself enforces the `not_claimed` row of the re-entry table.
+- **Accounts are created from a 020 read only.** A mandate, declaration or payment may exist before the account is
+  tracked: their `accountId` is nullable; the key is always (tenant, `Siret`).
+- **Certificates.** A `certificat` read from a 200 answer is kept as received (blank refused, ADR 0006: tolerant
+  reading); only a `certificat` typed by an operator (`Resolve…::asDeclared()` / `asPaid()`) must match `^\d{8}$`.
+- **Namespaces.** `TenantId` lives in `Domain\Tenant` (ADR 0012); `SubmissionError` and `OutcomeUnknownReason` in
+  `Domain\Submission` (shared by declarations and payments). There is no `ExternalReference`: the only host reference
+  is `Payment\PaymentReference`, which carries the reference rules (non-blank, at most 191 characters).

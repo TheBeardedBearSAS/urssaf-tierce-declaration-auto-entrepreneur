@@ -25,7 +25,9 @@
         "security": "https://github.com/TheBeardedBearSAS/urssaf-tierce-declaration-auto-entrepreneur/security/policy"
     },
     "require": {
-        "php": ">=8.2"
+        "php": ">=8.2",
+        "ext-filter": "*",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "carthage-software/mago": "^1.59",

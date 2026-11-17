@@ -67,3 +67,11 @@ rule within a tenant (ADR 0012), records claimed by an atomic update before any 
 - Documented in `docs/doctrine.md` (setup, schema, encryption recipe of `BirthDateType` and of the JSON columns,
   concurrency, erasure, backups).
 - Schema tests on SQLite check exact columns, indexes and unique constraints per table, and the ADR 0010 assertions.
+
+## Amendment (2026-11-18, lead-accepted, lot 1)
+
+- Payments follow ADR 0009 (amendment lot 1): the unique constraint `(tenant, payment_reference)` is replaced by a key
+  table `urssaf_tdae_current_payments` (tenant, payment reference → current record id), written with DBAL in the same
+  transaction as the record, like `urssaf_tdae_current_declarations`.
+- Added columns: `supersedes` / `superseded_by` on payment records, `accepted_after_supersession` on declaration
+  records, `cancellation_origin` on mandates; `account_id` is nullable on mandates and records.
