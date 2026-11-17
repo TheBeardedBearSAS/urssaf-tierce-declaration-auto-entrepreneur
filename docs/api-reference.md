@@ -569,8 +569,9 @@ payments of M1 to M4 possible, M6 second declaration; bank debit at the end of M
    confirmed on the sandbox. Declaring a period whose kind differs from the account periodicity is rejected locally only
    after `GET /comptes` has been called; otherwise the server answers `PERIODICITE_INVALIDE`.
 6. **Idempotency.**
-   - *Declaration (050)* is naturally idempotent on an open period (last wins; `certificat` stable, `idDeclaration` changes),
-     so retries on network errors are safe.
+   - *Declaration (050)* converges on an open period (last wins; `certificat` stable, `idDeclaration` changes), but every
+     call e-mails the AE: **decided in [ADR 0003](adr/0003-retry-and-unknown-outcome.md)**, 050 is never resent by
+     default (`outcome_unknown`), resend only when the host lists it in `retry_safe_writes`.
    - *Payment (060)* has **no published idempotency mechanism** (no key header, no duplicate-detection error): TBD, proposed:
      never auto-retry `POST /payer` after a timeout / 5xx / connection error; surface an "outcome unknown" exception, and let
      the caller reconcile (e.g. by the returned `certificat`/`idTelepaiement` or on the AE account). Doctrine tracking
@@ -588,8 +589,9 @@ payments of M1 to M4 possible, M6 second declaration; bank debit at the end of M
     prefers `rum` of a registered mandate and does not add checks the API does not document.
 11. **Personal and bank data.** `nir`, `dateNaissance`, `iban`, `bic`, `titulaireCompte` and addresses are personal data: never
     logged (mask the IBAN); SIRET is not secret but is kept out of log context by default.
-12. **Rate limiting.** TBD: honour HTTP 429 by surfacing a typed exception exposing `Retry-After` when present; no built-in
-    client throttle (300 requests/minute per API is not enforceable client-side across processes).
+12. **Rate limiting.** Decided in [ADR 0013](adr/0013-quotas-and-rate-limit.md): HTTP 429 surfaces a typed exception exposing
+    `Retry-After` when present; an in-process sliding window (300 requests/minute per tenant) is provided, on by default in
+    the standalone factory and opt-in in the Symfony bundle (not enforceable across processes).
 
 ---
 
