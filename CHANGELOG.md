@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Signed releases (workflow `release.yml`): each GitHub release carries the distribution archive, its `SHA256SUMS`
   and a SLSA build provenance attestation (`*.intoto.jsonl`, Sigstore); see *Verifying a release* in SECURITY.md.
 - CodeQL analysis of the GitHub Actions workflows (workflow `codeql.yml`) on every pull request and push to `main`.
+- Architecture decision records (`docs/adr/`): ADR 0000 states the architecture inherited from
+  `thebeardedbear/urssaf-tiers-prestations` and lists the ADRs that adapt it to this API.
+- Open-source (silver) tooling and documents: Developer Certificate of Origin sign-off (`bin/check-dco`, CI job `dco`),
+  SPDX licence headers (`bin/check-spdx`, part of `make guard`), branch coverage of at least 96 %
+  (`make coverage-branches`), `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md` and the security assurance case
+  (`docs/security/assurance-case.md`, in progress).
 
 ### Changed
 
