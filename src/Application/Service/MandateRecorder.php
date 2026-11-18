@@ -232,23 +232,40 @@ final readonly class MandateRecorder
      */
     private function attempts(?Operation $operation, Closure $attempt): mixed
     {
-        $number = 0;
-        while (true) {
-            ++$number;
+        // Bounded on purpose (no `while (true)`): the first MAX_ATTEMPTS - 1 attempts may be retried after a conflict, the
+        // last one is made outside the loop and its failure is final. Every mutation of the bounds therefore terminates.
+        foreach (range(1, self::MAX_ATTEMPTS - 1) as $number) {
             try {
                 return $attempt();
             } catch (Throwable $failure) {
-                $code = $failure instanceof DomainException ? $failure->violationCode() : null;
-                if ($code !== null && \in_array($code, self::CONFLICTS, true) && $number < self::MAX_ATTEMPTS) {
-                    continue;
+                if (!self::isConflict($failure)) {
+                    throw self::failure($operation, $number, $failure);
                 }
-                if (!$operation instanceof Operation) {
-                    throw $failure;
-                }
-
-                throw self::recordingFailed($operation, $number, $failure, $code);
             }
         }
+
+        try {
+            return $attempt();
+        } catch (Throwable $failure) {
+            throw self::failure($operation, self::MAX_ATTEMPTS, $failure);
+        }
+    }
+
+    private static function isConflict(Throwable $failure): bool
+    {
+        return $failure instanceof DomainException && \in_array($failure->violationCode(), self::CONFLICTS, true);
+    }
+
+    /**
+     * Wraps the failure when URSSAF accepted a call ($operation), otherwise lets it through untouched.
+     */
+    private static function failure(?Operation $operation, int $attempts, Throwable $failure): Throwable
+    {
+        if (!$operation instanceof Operation) {
+            return $failure;
+        }
+
+        return self::recordingFailed($operation, $attempts, $failure, $failure instanceof DomainException ? $failure->violationCode() : null);
     }
 
     /**

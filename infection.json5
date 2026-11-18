@@ -25,6 +25,10 @@
     // left 139 mutants untested while still reporting MSI 100 %. A higher limit makes the gate stricter, not weaker;
     // `make infection` also fails when any mutant is skipped.
     "timeout": 180,
+    // A timed-out mutant is not a verdict (the covering tests never said whether it is caught): count it as escaped. The
+    // code is written so that every mutant terminates (bounded retry loops, non-blocking lock acquisition observed by
+    // tests), and `make infection` also fails on any timed-out or syntax-error mutant.
+    "timeoutsAsEscaped": true,
     "minMsi": 100,
     "minCoveredMsi": 100
 }

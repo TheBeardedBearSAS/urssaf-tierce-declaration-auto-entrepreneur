@@ -157,6 +157,9 @@ Smaller adaptations of the application exceptions, following the reference `Doma
   Infection never runs a mutant whose covering tests exceed the limit in total; with the Doctrine and Symfony
   functional suites covering the shared value objects, 30 s left 139 mutants untested while MSI still read 100 %.
   The change makes the gate stricter (justified in `infection.json5`).
+- Infection `timeoutsAsEscaped` is enabled and `make infection` (and the CI job) also fails on timed-out and syntax-error
+  mutants: neither is a verdict. The source is written so that every mutant terminates (bounded retry loops) and is valid
+  PHP (no `($a !== null) === $b` comparison, which mutates into a non-associative chain).
 
 ## Amendment (2026-11-18, lead-accepted, lot 8)
 

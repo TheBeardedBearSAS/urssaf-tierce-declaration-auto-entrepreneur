@@ -61,11 +61,12 @@ final class ResolvePaymentOutcomeCommand extends Command
             $selector = CommandSelectors::paymentSelector($input);
             $paidAs = CommandOptions::text($input, self::OPTION_PAID_AS);
             $notReceived = CommandOptions::flag($input, self::OPTION_NOT_RECEIVED);
-            if (($paidAs !== null) === $notReceived) {
+            $hasOutcome = $paidAs !== null;
+            if ($hasOutcome === $notReceived) {
                 throw new InvalidOptionException('Give one of --paid-as or --not-received.');
             }
 
-            $payment = ($this->resolve)($paidAs !== null
+            $payment = ($this->resolve)($hasOutcome
                 ? ResolvePaymentOutcome::asPaid($tenant, $selector, $paidAs)
                 : ResolvePaymentOutcome::asNotReceived($tenant, $selector));
             CommandReports::renderFields($output, CommandViews::payment($payment));

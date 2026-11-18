@@ -75,6 +75,8 @@ infection: ## Mutation testing (100% MSI); runs its own initial test pass (never
 	$(PHP) vendor/bin/infection --min-msi=100 --min-covered-msi=100 --threads=max --show-mutations --no-progress \
 		--test-framework-options="$(UNIT_FUNCTIONAL)"
 	@grep -q '^Skipped: 0$$' var/infection/summary.log || { echo 'Infection skipped mutants (time limit, see infection.json5)'; exit 1; }
+	@grep -q '^Syntax Errors: 0$$' var/infection/summary.log || { echo 'Infection produced invalid (syntax error) mutants: rewrite the source'; exit 1; }
+	@grep -q '^Timed Out: 0$$' var/infection/summary.log || { echo 'Infection mutants timed out: not a verdict, make every mutant terminate'; exit 1; }
 
 phpstan: ## PHPStan level max
 	$(PHP) vendor/bin/phpstan analyse --memory-limit=-1 --no-progress
