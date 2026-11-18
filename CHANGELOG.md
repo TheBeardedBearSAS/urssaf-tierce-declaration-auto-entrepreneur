@@ -22,6 +22,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   SPDX licence headers (`bin/check-spdx`, part of `make guard`), branch coverage of at least 96 %
   (`make coverage-branches`), `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md` and the security assurance case
   (`docs/security/assurance-case.md`, in progress).
+- Domain model: `Siret`, `DeclarationPeriod` (monthly or quarterly), `Euros` (whole euros), turnover and contribution
+  amounts (union of the production 1.5.1 and sandbox 1.5.0 contracts), SEPA mandate value objects, and the `AeAccount`,
+  `Mandate`, `DeclarationRecord` and `PaymentRecord` aggregates with their lifecycles.
+- Wire mappers for the nine operations (020 to 075), tolerant of the production response wrapper and of string periods,
+  error payload parsing (object or list) and classification by code.
+- OAuth2 HTTP gateway (`UrssafHttpGateway`, `UrssafGatewayFactory`): token cache, one replay after a 401, payment
+  orders (060) never resent, other writes resent only when listed in `retrySafeWrites`, rate limit of 300 requests per
+  minute per tenant, PSR-6 / PSR-16 token stores.
+- Public integration events (`urssaf.tdae.*`, `docs/integration-events.md`) written to an outbox in the same
+  transaction as the state change and relayed at least once; in-memory repositories.
 
 ### Changed
 

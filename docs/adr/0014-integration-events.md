@@ -63,3 +63,15 @@ income (ADR 0010), and events travel to buses and consumers with weaker controls
 - Documented in `docs/integration-events.md`; any payload change bumps `VERSION` of that type.
 - The type prefix `urssaf.tdae.` never collides with the other URSSAF packages (`urssaf.paje.`, …).
 - A test asserts that no catalogue class has a property named after the SIRET, a birth date, bank data or an amount.
+
+## Amendment (2026-11-18, lead-accepted, lot 4a)
+
+- `idDeclaration` is nullable: `null` when the declaration was resolved by an operator, whose result holds the
+  `certificat` only (ADR 0009); same as `idTelepaiement`.
+- `externalReference` is the `PaymentReference` on the three payment events and `null` on every other type.
+- The event id hashes the tenant together with the type, the aggregate id (possibly `null`), the instant and the
+  facts: two tenants that register the same RUM at the same instant get two ids.
+- The relay orders delivery per aggregate. Events without an aggregate (SEPA, an erasure without a tracked account)
+  are ordered per tenant: a failed one holds back the next aggregate-less events of the same tenant only, never an
+  aggregate's events.
+- The SEPA events are built by `Application\Service\SepaMandateEvents`, called by the 070 / 071 handlers (lot 4b).

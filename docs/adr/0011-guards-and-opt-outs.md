@@ -70,3 +70,10 @@ Unlike PAJE (whose 020 says nothing about the mandate), AE 020 returns `mandatPr
   accepts, except through a guard that has an opt-out.
 - A host that tracks mandates elsewhere sets `workflow.require_local_mandate: false` or imports its mandates.
 - When the sandbox settles a point of §5, only a default or a server-side entry changes.
+
+## Amendment (2026-11-18, lead-accepted, lot 4a)
+
+- **Item 4: "today".** The Application reads "today" from `WorkflowPolicy::businessTimeZone()` / `today()`.
+  `ApiConfiguration` lives in Infrastructure, and Deptrac forbids Application to Infrastructure. Both are fed from the
+  same bundle key `business_timezone` (default `Europe/Paris`), so there is one setting and two readers (reference and
+  PAJE shape).

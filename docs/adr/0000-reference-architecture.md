@@ -126,3 +126,18 @@ Smaller adaptations, accepted here:
 
 New decisions and deviations get an ADR (Context / Decision / Consequences), accepted by the lead before the code that
 implements them. An amendment is appended to the ADR it changes, dated and marked lead-accepted.
+
+## Amendment (2026-11-18, lead-accepted, lot 4a)
+
+Smaller adaptations of the application layer, each overriding the reference (precedent: PAJE lot 4a):
+
+- The outbox relay stores a sink failure as the exception class and code, never its message (the reference stores the
+  message). A host sink may put personal data in it (ADR 0010).
+- `PsrLoggerFailureReporter` logs the class, the code and the event class names, not the failure message (the
+  reference logs the message). The failure comes from a host listener (ADR 0010 items 5 and 7).
+- `PurgeOutbox::$retention` is nullable and defaults to `WorkflowPolicy::outboxRetention()` (bundle
+  `outbox.retention`, `P30D`, ADR 0015). The reference makes the retention mandatory in the command.
+- `WorkflowPolicy` has immutable `with*()` copies and the erasure and mandate tunables (ADR 0011, ADR 0017). The
+  reference has neither.
+- The in-memory repositories track versions per instance (`VersionTokens`), because the AE aggregates expose no
+  version accessor (ADR 0016 item 6).
