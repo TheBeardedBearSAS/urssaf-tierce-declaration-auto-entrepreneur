@@ -15,8 +15,9 @@ namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Por
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Tenant\TenantId;
 
 /**
- * Client-side throttling of the URSSAF quota (ADR 0013): URSSAF publishes no value, so the default implementation never
- * throttles and the quota applies as HTTP 429. Token calls are not counted.
+ * Client-side throttling of the URSSAF quota (ADR 0013). URSSAF publishes 300 requests per minute per API client: the
+ * factory default `SlidingWindowRateLimiter` enforces it per tenant and per process; `NoopRateLimiter` leaves the quota
+ * to HTTP 429. Token calls are not counted; the replay after a 401 is.
  *
  * The operation is informative (logs, messages): implementations must not keep per-operation quotas.
  */

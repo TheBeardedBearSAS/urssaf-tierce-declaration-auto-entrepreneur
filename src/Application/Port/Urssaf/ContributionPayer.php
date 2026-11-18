@@ -15,6 +15,7 @@ namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Por
 use SensitiveParameter;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\RateLimitExceeded;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\Siret;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Exception\RecordNotFound;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Exception\UrssafException;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentOrder;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentResult;
@@ -28,11 +29,12 @@ interface ContributionPayer
     /**
      * Orders the payment (060).
      *
-     * @throws OutcomeUnknown             a transport error, a 5xx or an unreadable 2xx: never resent, not configurable (ADR 0003)
-     * @throws UrssafRequestRejected      classified ({@see RejectionKind})
-     * @throws UrssafAuthenticationFailed
+     * @throws OutcomeUnknown             transport error, any 5xx, or a 2xx that cannot be read: never resent, not configurable
+     * @throws UrssafRequestRejected      classified ({@see RejectionKind}) (400)
+     * @throws UrssafAuthenticationFailed token 400/401/403, 401 after one replay, 403
      * @throws UrssafUnavailable          retryable: 429 or token failure only (the call did not reach URSSAF)
-     * @throws RateLimitExceeded          the local limiter refused the call
+     * @throws RateLimitExceeded          the local limiter refused the call (nothing sent)
+     * @throws RecordNotFound             "credentials.not_found": the tenant has no credentials (nothing sent)
      *
      * Any other {@see UrssafException} means URSSAF answered something the contract does not describe.
      */

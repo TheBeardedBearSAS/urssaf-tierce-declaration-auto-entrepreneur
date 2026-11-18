@@ -16,6 +16,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Rate
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\Siret;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Contribution\Estimate;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Contribution\Turnover;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Exception\RecordNotFound;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Exception\UrssafException;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Tenant\TenantId;
 
@@ -27,12 +28,14 @@ interface ContributionEstimator
     /**
      * Estimates the contributions (040).
      *
-     * @throws UrssafRequestRejected      classified ({@see RejectionKind})
-     * @throws UrssafAuthenticationFailed
-     * @throws UrssafUnavailable          retryable (transport error, 429, 5xx)
-     * @throws RateLimitExceeded          the local limiter refused the call
+     * @throws UrssafRequestRejected      classified ({@see RejectionKind}); 404 is `not_found` on 075
+     * @throws UrssafAuthenticationFailed token 400/401/403, 401 after one replay, 403
+     * @throws UrssafUnavailable          retryable: transport error, 429 (Retry-After), 500/502/503/504, token 429/5xx/transport
+     * @throws RateLimitExceeded          the local limiter refused the call (nothing sent)
+     * @throws RecordNotFound             "credentials.not_found": the tenant has no credentials (nothing sent)
      *
-     * Any other {@see UrssafException} means URSSAF answered something the contract does not describe.
+     * Any other {@see UrssafException} (UnexpectedUrssafResponse: another 5xx, another 4xx, an unreadable 2xx) means URSSAF
+     * answered something the contract does not describe.
      */
     public function estimateContributions(TenantId $tenantId, Siret $siret, Turnover $turnover): Estimate;
 }

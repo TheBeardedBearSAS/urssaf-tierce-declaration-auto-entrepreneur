@@ -21,8 +21,9 @@ use Throwable;
  * Transient failure: network error, timeout, HTTP 429 (quota, ADR 0013), 5xx. Retryable.
  *
  * {@see self::mayHaveReachedUrssaf()} tells whether URSSAF may have processed the call anyway: true for transport
- * errors (e.g. a timeout once the request was sent) and HTTP 5xx answers of the API call; false for HTTP 429 (refused
- * before processing) and for every failure of the token request (the API call itself was never sent).
+ * errors (e.g. a timeout once the request was sent) and HTTP 5xx answers of the API call (500/502/503/504 are retryable
+ * on safe operations; another 5xx is an unexpected response there); false for HTTP 429 (refused before processing) and
+ * for every failure of the token request (the API call itself was never sent).
  *
  * On a never-resent operation (060, and 030, 031, 050, 070, 071 unless declared safe, ADR 0003) the gateway never throws it
  * when `mayHaveReachedUrssaf()` is true: it throws {@see OutcomeUnknown} instead.
