@@ -6,7 +6,7 @@ Doctrine bridges, 100 % coverage and MSI).
 
 ## Status
 
-**The internal plan below is done** (lots 0 to 7, all committed on `feat/implementation`): the domain, the wire mappers, the
+**The internal plan below is done** (lots 0 to 7, merged in #15; version 0.1.0 released on 2026-11-18): the domain, the wire mappers, the
 HTTP gateway, the use cases ([workflow.md](workflow.md)), the in-memory persistence, the outbox, the
 `Testing\SimulatedAeGateway` simulator, the standalone builder ([standalone.md](standalone.md)), the Symfony bundle
 ([symfony.md](symfony.md): configuration, `urssaf:tdae:*` commands, Messenger, Scheduler, locks, translations, Flex recipe),
@@ -20,9 +20,8 @@ design as planned and kept; where the code and a section differ, the code, the [
 1. **Run the contract tests against the sandbox** (needs the DataPass subscription, sandbox credentials and test data): settle
    or amend the open points of [api-reference.md](api-reference.md) §5 listed under "to be settled by the contract tests",
    update the SDK and the ADRs where an answer differs from the tolerant default, and remove the settled points from §5.
-2. **Release**: first tag and publication on Packagist (the package is not released yet), the Flex recipe published in
-   `symfony/recipes-contrib`, the repository made public (badges and quality proofs in the README are active only then), and the
-   dated security review linked from [security/assurance-case.md](security/assurance-case.md).
+2. **After 0.1.0**: the Flex recipe published in `symfony/recipes-contrib`, and the dated security review linked from
+   [security/assurance-case.md](security/assurance-case.md).
 
 ## Already in place (starting point)
 
