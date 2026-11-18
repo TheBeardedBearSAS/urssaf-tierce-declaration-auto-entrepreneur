@@ -62,3 +62,10 @@ code; 409 is "Ressource déjà existante" (`ERREUR_MANDAT_ALREADYEXIST`, §2.7).
   `RejectionKind` by amendment.
 - Until then those unpublished cases surface as `invalid_parameter` (when URSSAF sends `PARAM_INVALIDE`) or `unknown`
   with the raw code available to the host.
+
+## Amendment (2026-11-18, lead-accepted, lot 2)
+
+- Deptrac keeps `ApiErrorCode` in Infrastructure, so the Application-side exception cannot expose it.
+  `UrssafRequestRejected::errors()` returns `ApiErrors` (a list of `ApiError` with the **raw, normalised** wire code,
+  message and description) and `hasErrorCode(string)`; callers branch on `kind()` (`RejectionKind`), never on a code,
+  as in the reference.

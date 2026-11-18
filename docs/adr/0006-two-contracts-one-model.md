@@ -56,3 +56,10 @@ tests (§4 decision 3).
   removing it is a mapper change with no impact on the domain.
 - Fields that only one contract or only the PDF defines are nullable in the domain; hosts must not read `null` as
   "zero" or "false".
+
+## Amendment (2026-11-18, lead-accepted, lot 2)
+
+- The period reader/writer is `Wire\PeriodEncoding`; the wrapper is detected by `Wire\ResponseEnvelope`
+  (`unwrap()`, `shapeOf()`), which the gateway logs at debug level (lot 3).
+- No `*_response_wrapped.json` fixture is committed: the wrapped variant of each official 040 / 050 / 060 example is
+  generated at test time (`Fixtures::wrapped()`) from the same values, so the official examples remain the only source.

@@ -119,10 +119,12 @@ class DeclarationRecord
 
     /**
      * Re-entry of the period (ADR 0009): creates the new current record (same tenant, SIRET, period and account), which
-     * supersedes this one, and links this one to it. This record keeps its state. Which states allow a re-entry is an
-     * application decision; the caller saves both records in one unit of work.
+     * supersedes this one, and links this one to it. This record keeps its state. Refused while the record is
+     * submitting (`not_claimed` row of the ADR 0009 re-entry table). From every other state, whether a re-entry is
+     * allowed is an application decision; the caller saves both records in one unit of work.
      *
-     * @throws InvariantViolation "declaration_record.already_superseded"
+     * @throws InvariantViolation     "declaration_record.already_superseded"
+     * @throws InvalidStateTransition from submitting
      */
     public function supersede(DeclarationRecordId $newId, DeclarationFingerprint $fingerprint, Instant $now): self
     {
@@ -131,6 +133,9 @@ class DeclarationRecord
                 'declaration_record.already_superseded',
                 'The declaration record is already superseded.',
             );
+        }
+        if ($this->status->state() === DeclarationState::Submitting) {
+            throw InvalidStateTransition::between('declaration_record', DeclarationState::Submitting->value, 'superseded');
         }
         $this->supersededBy = $newId;
 

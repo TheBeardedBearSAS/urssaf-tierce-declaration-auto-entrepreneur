@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Domain\Declaration;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationRecord;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationState;
@@ -22,6 +23,8 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Submission\Out
 
 /**
  * Re-entry of a period: the new record supersedes the previous one (ADR 0009).
+ *
+ * @mago-expect lint:too-many-methods One test per rule or transition of the class under test.
  */
 final class DeclarationRecordSupersessionTest extends TestCase
 {
@@ -152,5 +155,74 @@ final class DeclarationRecordSupersessionTest extends TestCase
         $record->markDeclared(DeclarationSamples::result(), DeclarationSamples::later(2));
 
         static::assertFalse($record->isAcceptedAfterSupersession());
+    }
+
+    public function testASubmittingRecordCannotBeSuperseded(): void
+    {
+        $previous = DeclarationSamples::record(null);
+        $previous->startSubmission(DeclarationSamples::later(1));
+
+        DeclarationSamples::assertInvalidTransition(
+            static fn(): DeclarationRecord => $previous->supersede(DeclarationSamples::recordId('record-2'), DeclarationSamples::otherFingerprint(), DeclarationSamples::later(5)),
+            'submitting',
+            'superseded',
+        );
+        static::assertNull($previous->supersededBy());
+        static::assertTrue($previous->isCurrent());
+        static::assertSame(DeclarationState::Submitting, $previous->state());
+    }
+
+    #[DataProvider('supersedableStates')]
+    public function testEveryOtherStateCanBeSuperseded(DeclarationState $expected): void
+    {
+        $previous = self::recordIn($expected);
+        static::assertSame($expected, $previous->state());
+
+        $next = $previous->supersede(DeclarationSamples::recordId('record-2'), DeclarationSamples::otherFingerprint(), DeclarationSamples::later(9));
+
+        static::assertSame('record-2', $previous->supersededBy()?->value());
+        static::assertFalse($previous->isCurrent());
+        static::assertSame($expected, $previous->state());
+        static::assertSame('record-1', $next->supersedes()?->value());
+    }
+
+    /**
+     * @return iterable<string, array{DeclarationState}>
+     */
+    public static function supersedableStates(): iterable
+    {
+        yield 'pending' => [DeclarationState::Pending];
+        yield 'declared' => [DeclarationState::Declared];
+        yield 'rejected' => [DeclarationState::Rejected];
+        yield 'outcome_unknown' => [DeclarationState::OutcomeUnknown];
+        yield 'error' => [DeclarationState::Error];
+        yield 'invalid_credentials' => [DeclarationState::InvalidCredentials];
+    }
+
+    private static function recordIn(DeclarationState $state): DeclarationRecord
+    {
+        $record = DeclarationSamples::record(null);
+        if ($state === DeclarationState::Pending) {
+            return $record;
+        }
+        $record->startSubmission(DeclarationSamples::later(1));
+        $now = DeclarationSamples::later(2);
+        if ($state === DeclarationState::Declared) {
+            $record->markDeclared(DeclarationSamples::result(), $now);
+        }
+        if ($state === DeclarationState::Rejected) {
+            $record->markRejected(DeclarationSamples::errors(), $now);
+        }
+        if ($state === DeclarationState::OutcomeUnknown) {
+            $record->markOutcomeUnknown(OutcomeUnknownReason::MayHaveReachedUrssaf, [], $now);
+        }
+        if ($state === DeclarationState::Error) {
+            $record->markFailed(DeclarationSamples::errors(), $now);
+        }
+        if ($state === DeclarationState::InvalidCredentials) {
+            $record->markInvalidCredentials($now);
+        }
+
+        return $record;
     }
 }

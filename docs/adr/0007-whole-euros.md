@@ -45,3 +45,7 @@ deduction, the PDF says the amount due is `montantTotal + montantRegulAcre + mon
   cents.
 - A host that keeps cents rounds them itself with the DGFiP rule (§1.2) before building a `Turnover`.
 - If URSSAF ever returns decimals, the decoder refuses them loudly instead of truncating them.
+
+## Amendment (2026-11-18, lead-accepted, lot 2)
+
+- The decoder/encoder is `Wire\EurosEncoding`.

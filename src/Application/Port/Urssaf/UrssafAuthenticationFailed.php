@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+ *
+ * Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf;
+
+use RuntimeException;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Exception\UrssafException;
+
+/**
+ * Token request refused, or HTTP 401 (after a token refresh) or 403 (ADR 0002). Credentials or habilitation must be
+ * fixed; not retryable. The message never contains credentials nor tokens.
+ */
+final class UrssafAuthenticationFailed extends RuntimeException implements UrssafException
+{
+    private function __construct(string $message, private readonly int $httpStatus)
+    {
+        parent::__construct($message, $httpStatus);
+    }
+
+    public static function withStatus(int $httpStatus): self
+    {
+        return new self(\sprintf('URSSAF authentication or authorisation failed (HTTP %d).', $httpStatus), $httpStatus);
+    }
+
+    public function httpStatus(): int
+    {
+        return $this->httpStatus;
+    }
+}
