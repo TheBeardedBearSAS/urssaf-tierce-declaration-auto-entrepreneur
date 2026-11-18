@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-18
+
+First release.
+
+### Upgrading
+
+- Driver `doctrine`: generate and run the migration for the `urssaf_tdae_*` tables (`doctrine:migrations:diff
+  --em=urssaf_tdae`, `doctrine:migrations:migrate`); the package ships no migration. `urssaf:tdae:check` reports the
+  missing tables.
+
 ### Added
 
 - Live sandbox contract tests (`make test-contract`, `tests/Contract`, manual CI job `contract`): read-only and opt-in write

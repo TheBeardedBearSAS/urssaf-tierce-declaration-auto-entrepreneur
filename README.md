@@ -21,12 +21,12 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > application sends to URSSAF.
 
 > [!NOTE]
-> **Status: implemented, not yet released.** The nine operations, the local workflows, the simulator, the standalone
-> builder, the Symfony bundle and the Doctrine bridge are implemented and covered by the quality gates (`make ci`). The
-> package is **not yet published on Packagist** and has no tagged version. The live sandbox contract tests are written but
-> have not been run against the URSSAF sandbox yet: until they have, the points of
-> [docs/api-reference.md](docs/api-reference.md) §5 that only the sandbox can settle (response shapes of production
-> and sandbox, optional fields, unpublished error codes) are handled by tolerant decoding, not confirmed.
+> **Status: 0.1.0 released; sandbox contract run still to do (see [docs/roadmap.md](docs/roadmap.md)).** The nine
+> operations, the local workflows, the simulator, the standalone builder, the Symfony bundle and the Doctrine bridge are
+> in place. The live sandbox contract tests are written but have not been run against the URSSAF sandbox yet: until
+> they have, the points of [docs/api-reference.md](docs/api-reference.md) §5 that only the sandbox can settle (response
+> shapes of production and sandbox, optional fields, unpublished error codes) are handled by tolerant decoding, not
+> confirmed.
 
 ## Scope
 
@@ -85,9 +85,8 @@ Symfony 6.4 / 7.x for the bundle, `doctrine/orm` and `doctrine/dbal` for the Doc
 composer require thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur
 ```
 
-The package is not on Packagist yet: until its first release, declare the GitHub repository in the `repositories` of your
-`composer.json` (type `vcs`). With Symfony Flex, the recipe registers the bundle and adds the `URSSAF_TDAE_*` variables
-once it is published in `symfony/recipes-contrib`; otherwise follow *Quick start (Symfony)* below.
+With Symfony Flex, the recipe registers the bundle and adds the `URSSAF_TDAE_*` variables once it is published in
+`symfony/recipes-contrib`; until then follow *Quick start (Symfony)* below.
 
 ## Quick start (standalone)
 
