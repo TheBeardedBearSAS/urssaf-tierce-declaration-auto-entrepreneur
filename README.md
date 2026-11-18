@@ -21,7 +21,8 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > application sends to URSSAF.
 
 > 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator, the standalone builder, the
-> Symfony bundle and the Doctrine bridge are implemented; the contract tests follow [docs/roadmap.md](docs/roadmap.md).
+> Symfony bundle, the Doctrine bridge and the live sandbox contract tests are implemented; the open points they settle
+> are listed in [docs/api-reference.md](docs/api-reference.md) §5.
 
 ## Scope
 
@@ -126,6 +127,7 @@ BIC, holder or address is ever stored.
 - [docs/symfony.md](docs/symfony.md) — Symfony bundle: Flex recipe, configuration, console commands, Messenger, Scheduler, locks.
 - [docs/standalone.md](docs/standalone.md) — wiring without a framework, scheduling, testing with the simulator.
 - [docs/doctrine.md](docs/doctrine.md) — Doctrine persistence: tables, types, dedicated entity manager, concurrency, personal data, migrations.
+- [docs/testing.md](docs/testing.md) — suites, fakes, contract tests against the sandbox, benchmarks, quality gates.
 - [docs/workflow.md](docs/workflow.md) — lifecycles, re-entry and settlement tables, unknown outcomes, guards, erasure.
 - [docs/integration-events.md](docs/integration-events.md) — public integration events and the outbox.
 - [docs/adr/](docs/adr/README.md) — architecture decision records (inherited architecture and its adaptations).
@@ -144,7 +146,8 @@ PHP 8.2+. Development only needs Docker: every `make` target runs in a container
 make install     # build the image, install dependencies
 make ci          # full quality gate: cs, rector, phpstan, mago, deptrac, composer checks, hadolint, guard, coverage, infection
 make test        # unit + functional tests
-make bench       # benchmarks (PHPBench, tests/Benchmark), added with the implementation
+make test-contract  # live sandbox contract tests (opt-in, skipped without credentials)
+make bench       # benchmarks (PHPBench, tests/Benchmark)
 make help        # every target
 ```
 
@@ -154,6 +157,24 @@ Once the repository is public, `main` publishes its quality proofs, linked from 
 coverage report on Codecov, the full mutation report on the Stryker Dashboard, the SonarQube Cloud quality gate and the
 OpenSSF Scorecard. The benchmarks (`tests/Benchmark`, PHPBench in `tools/phpbench`, out of the package dependencies)
 run on every pull request against the base commit, and the job fails on a regression of more than 20 %.
+
+### Contract tests
+
+`make test-contract` checks the SDK against the real URSSAF sandbox. It is opt-in: without credentials every test is
+skipped (exit 0), and it is not part of `make ci`, of the coverage or of the mutation gates. Export the variables in your
+shell (they are forwarded to the container, never written to a file):
+
+| Variable | Required | Use |
+|---|---|---|
+| `URSSAF_SANDBOX_CLIENT_ID`, `URSSAF_SANDBOX_CLIENT_SECRET` | yes | Sandbox OAuth2 client credentials. |
+| `URSSAF_SANDBOX_BASE_URI` | no | Override of the sandbox host. |
+| `URSSAF_SANDBOX_SIRET` | for most tests | SIRET of a sandbox test account (020, 040, 075 and the writes). |
+| `URSSAF_SANDBOX_BIRTH_DATE` | for the writes | Its birth date, `YYYY-MM-DD` (sent by 030, 031; every write test needs it). |
+| `URSSAF_SANDBOX_WRITE` | no | `1` runs the tests that write sandbox state (030, 031, 050, 060, 070, 071) and **e-mail the auto-entrepreneur**. |
+
+No SIRET, birth date or bank detail of a real person is ever in the code. The tests print non-failing notes (response
+shape, optional fields, error codes) in `var/contract/observations.log`; see [docs/testing.md](docs/testing.md). In CI the
+`contract` job is manual (workflow dispatch, environment `urssaf-sandbox`).
 
 ## Versioning
 

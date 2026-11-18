@@ -46,8 +46,15 @@ test-unit: ## Run unit tests
 test-functional: ## Run functional tests
 	$(PHP) vendor/bin/phpunit --testsuite=functional
 
-test-contract: ## Run live sandbox contract tests (needs URSSAF_SANDBOX_CLIENT_ID/SECRET)
-	docker compose run --rm -e URSSAF_SANDBOX_CLIENT_ID -e URSSAF_SANDBOX_CLIENT_SECRET -e URSSAF_SANDBOX_BASE_URI -e URSSAF_SANDBOX_SIRET -e URSSAF_SANDBOX_BIRTH_DATE -e URSSAF_SANDBOX_ALLOW_WRITES php vendor/bin/phpunit --testsuite=contract
+# Sandbox variables forwarded to the container. `-e NAME` without a value copies the shell value and leaves the variable
+# unset when the shell has none (so the live tests skip). No value is ever written here and no --env-file is read.
+CONTRACT_ENV := URSSAF_SANDBOX_CLIENT_ID URSSAF_SANDBOX_CLIENT_SECRET URSSAF_SANDBOX_BASE_URI URSSAF_SANDBOX_SIRET \
+	URSSAF_SANDBOX_BIRTH_DATE URSSAF_SANDBOX_WRITE
+
+test-contract: ## Live sandbox contract tests (skipped without URSSAF_SANDBOX_CLIENT_ID/SECRET); notes in var/contract
+	$(PHP) mkdir -p var/contract
+	$(PHP) rm -f var/contract/observations.log
+	docker compose run --rm $(addprefix -e ,$(CONTRACT_ENV)) php vendor/bin/phpunit --testsuite=contract
 
 coverage: ## Coverage (pcov): text + clover + html in var/coverage, enforce 100% lines/methods/classes
 	$(PHP) vendor/bin/phpunit $(UNIT_FUNCTIONAL) --coverage-text --coverage-clover var/coverage/clover.xml --coverage-html var/coverage/html --coverage-xml var/coverage/coverage-xml --log-junit var/coverage/junit.xml

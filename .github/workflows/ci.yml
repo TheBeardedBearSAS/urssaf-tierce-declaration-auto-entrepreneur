@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       contract:
-        description: Run the contract tests against the URSSAF sandbox (needs repository secrets)
+        description: Run the contract tests against the URSSAF sandbox (needs the urssaf-sandbox environment secrets)
         type: boolean
         default: false
       contract_writes:
@@ -327,4 +327,11 @@ jobs:
           URSSAF_SANDBOX_BASE_URI: ${{ vars.URSSAF_SANDBOX_BASE_URI }}
           URSSAF_SANDBOX_SIRET: ${{ vars.URSSAF_SANDBOX_SIRET }}
           URSSAF_SANDBOX_BIRTH_DATE: ${{ vars.URSSAF_SANDBOX_BIRTH_DATE }}
-          URSSAF_SANDBOX_ALLOW_WRITES: ${{ inputs.contract_writes && '1' || '' }}
+          URSSAF_SANDBOX_WRITE: ${{ inputs.contract_writes && '1' || '' }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: contract-observations
+          path: var/contract/observations.log
+          if-no-files-found: ignore
+          retention-days: 7

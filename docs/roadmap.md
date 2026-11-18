@@ -11,7 +11,7 @@ persistence, the outbox, the `Testing\SimulatedAeGateway` simulator, the standal
 ([standalone.md](standalone.md)) and the Symfony bundle ([symfony.md](symfony.md): configuration, `urssaf:tdae:*`
 commands, Messenger, Scheduler, locks, translations, Flex recipe) and the Doctrine bridge (lot 6,
 [doctrine.md](doctrine.md): mapping, repositories, outbox, statistics, `withDoctrine()`, the bundle's `doctrine`
-driver). Still to come: the contract tests.
+driver). The contract tests are written (`tests/Contract`); they still have to run against the sandbox.
 
 ## Already in place (skeleton)
 
@@ -69,7 +69,8 @@ driver). Still to come: the contract tests.
 - Unit: value objects, mappers against `tests/Fixtures/wire/*.json`, handlers with fake gateway, error parser.
 - Functional: Symfony bundle wiring, Doctrine mapping.
 - Contract (`make test-contract`, manual CI job): sandbox credentials `URSSAF_SANDBOX_CLIENT_ID/SECRET`, optional
-  `URSSAF_SANDBOX_BASE_URI`; a sandbox SIRET and birth date (test data to obtain at onboarding). First goals: settle the
+  `URSSAF_SANDBOX_BASE_URI`, `URSSAF_SANDBOX_SIRET`, `URSSAF_SANDBOX_BIRTH_DATE` (test data to obtain at onboarding) and
+  `URSSAF_SANDBOX_WRITE=1` for the tests that write. First goals: settle the
   prd/sb response shape, `Compte` PDF-only fields, string vs integer periods, `iban`/`rum` rule on `/payer`.
 
 ## Out of scope
@@ -84,4 +85,4 @@ done here.
 3. HTTP gateway (OAuth2, errors, 429 handling).
 4. Application commands/queries (payment: no auto-retry).
 5. Symfony bridge (done), then Doctrine tracking (done).
-6. Contract tests, then remove the open points from `api-reference.md`.
+6. Contract tests (done: `tests/Contract`, `docs/testing.md`), then run them against the sandbox and remove the settled open points from `api-reference.md`.
