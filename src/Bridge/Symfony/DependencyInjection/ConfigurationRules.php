@@ -155,9 +155,10 @@ final class ConfigurationRules
 
     /**
      * ADR 0003: a record left "submitting" for longer than "workflow.stale_submission_after" is reconciled (moved to
-     * "outcome_unknown"), so a threshold that does not exceed one API call plus one token call, each bounded by
-     * "http_timeout", would reconcile submissions that are still in flight. The threshold is measured by adding it to
-     * a fixed instant (see {@see seconds()}), so that "P1M" counts 31 days.
+     * "outcome_unknown"), so a threshold that does not exceed four times "http_timeout" would reconcile submissions
+     * that are still in flight: a token call and the API call, each bounded by "http_timeout", and twice because of the
+     * single replay after a 401 (ADR 0002, ADR 0003, ADR 0015 amendment lot 6). The threshold is measured by adding it
+     * to a fixed instant (see {@see seconds()}), so that "P1M" counts 31 days.
      *
      * An "http_timeout" that is not a number (an "%env(float:...)%" placeholder, resolved at runtime) cannot be compared
      * at build time: the rule is skipped.
@@ -174,7 +175,7 @@ final class ConfigurationRules
             return false;
         }
 
-        return self::seconds($config['workflow']['stale_submission_after']) <= 2 * $timeout;
+        return self::seconds($config['workflow']['stale_submission_after']) <= 4 * $timeout;
     }
 
     /**

@@ -39,4 +39,12 @@ final class ServiceIds
 
     /** Monolog channel of the logs of the package (never personal data, ADR 0010). */
     public const LOGGER_CHANNEL = 'urssaf_tdae';
+
+    /**
+     * Service id of the entity manager that DoctrineBundle registers under the given name.
+     */
+    public static function entityManager(string $name): string
+    {
+        return \sprintf('doctrine.orm.%s_entity_manager', $name);
+    }
 }

@@ -63,6 +63,17 @@ final class FlexRecipeTest extends TestCase
         }
     }
 
+    public function testThePersistenceIsLeftToTheDefaultDriverWithADedicatedEntityManagerHint(): void
+    {
+        /** @var array{urssaf_tierce_declaration_auto_entrepreneur: array<string, mixed>} $config */
+        $config = self::recipeConfig();
+        $contents = (string) file_get_contents(self::RECIPE . '/' . self::CONFIG);
+
+        static::assertArrayNotHasKey('persistence', $config['urssaf_tierce_declaration_auto_entrepreneur']);
+        static::assertStringContainsString('# persistence: { driver: doctrine, entity_manager: urssaf_tdae }', $contents);
+        static::assertStringContainsString('DEDICATED entity manager (docs/doctrine.md)', $contents);
+    }
+
     public function testTheRecipeConfigurationCarriesTheLicenceHeader(): void
     {
         $header = (string) file_get_contents(self::RECIPE . '/' . self::CONFIG);

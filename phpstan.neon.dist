@@ -57,6 +57,12 @@ parameters:
                 - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\Mandate
                 - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationRecord
                 - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentRecord
+                # Doctrine bridge entities (ADR 0016): read-only rows written with DBAL, mapped, hence proxied like the
+                # aggregates.
+                - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\ActiveMandate
+                - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\CurrentDeclaration
+                - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\CurrentPayment
+                - TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\OutboxMessage
         # Disabled rules (DDD value objects / domain model), each one justified:
         # Optional value-object arguments and "withX" factories legitimately default (e.g. currency, locale).
         noConstructorParameterWithDefaultValue:

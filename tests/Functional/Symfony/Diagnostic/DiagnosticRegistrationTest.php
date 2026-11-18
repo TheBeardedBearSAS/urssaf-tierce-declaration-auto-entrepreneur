@@ -22,6 +22,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Depend
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\AuthenticationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\ConfigurationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\CredentialsCheck;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\DatabaseSchemaCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\InstallationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\LockCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\PersistenceCheck;
@@ -65,6 +66,20 @@ final class DiagnosticRegistrationTest extends TestCase
         static::assertSame(['in_memory'], $container->getDefinition(PersistenceCheck::class)->getArguments());
         static::assertEquals([new Reference(OperationLocks::class)], $container->getDefinition(LockCheck::class)->getArguments());
         static::assertSame([true, 120, 'test.limiter', 120], $container->getDefinition(RateLimiterCheck::class)->getArguments());
+    }
+
+    public function testTheDatabaseSchemaCheckFollowsThePersistenceCheckWithTheDoctrineDriver(): void
+    {
+        $container = (new TestKernel(['persistence' => ['driver' => 'doctrine', 'entity_manager' => 'urssaf_tdae']], false, false, [
+            'dbal' => ['connections' => ['urssaf_tdae' => ['driver' => 'pdo_sqlite', 'memory' => true]]],
+            'orm' => ['enable_lazy_ghost_objects' => true, 'entity_managers' => ['urssaf_tdae' => ['connection' => 'urssaf_tdae']]],
+        ]))->definitions();
+
+        static::assertSame(
+            [ConfigurationCheck::class, CredentialsCheck::class, AuthenticationCheck::class, TokenStoreCheck::class, PersistenceCheck::class, DatabaseSchemaCheck::class, LockCheck::class, RateLimiterCheck::class],
+            array_keys($container->findTaggedServiceIds(ServiceIds::TAG_INSTALLATION_CHECK)),
+        );
+        static::assertEquals([new Reference('doctrine.orm.urssaf_tdae_entity_manager'), 'urssaf_tdae'], $container->getDefinition(DatabaseSchemaCheck::class)->getArguments());
     }
 
     public function testTheSimulatedGatewayReplacesTheAuthenticationCheck(): void

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Auto-entrepreneur account tracked by a tenant: one account per (tenant, SIRET). The birth date (ADR 0010, personal
+         data) has a column type of its own so that a host can encrypt it alone; the status snapshot of method 020 is
+         embedded as columns. "version" is the optimistic lock token of the persistence layer. -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AeAccount" table="urssaf_tdae_accounts">
+        <unique-constraints>
+            <unique-constraint name="uniq_urssaf_tdae_account_siret" columns="tenant_id,siret"/>
+        </unique-constraints>
+        <indexes>
+            <index name="idx_urssaf_tdae_account_sync" columns="tenant_id,last_synced_at"/>
+        </indexes>
+        <id name="id" type="urssaf_tdae_account_id" column="id" length="64">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="version" type="integer" version="true"/>
+        <field name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <field name="siret" type="urssaf_tdae_siret" column="siret" length="14"/>
+        <field name="birthDate" type="urssaf_tdae_birth_date" column="birth_date" nullable="true"/>
+        <field name="createdAt" type="urssaf_tdae_instant" column="created_at"/>
+        <field name="lastSyncedAt" type="urssaf_tdae_instant" column="last_synced_at"/>
+        <field name="updatedAt" type="urssaf_tdae_instant" column="updated_at"/>
+        <embedded name="status" class="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AccountStatus" use-column-prefix="false"/>
+    </entity>
+</doctrine-mapping>

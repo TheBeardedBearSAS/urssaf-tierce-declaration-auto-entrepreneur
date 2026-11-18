@@ -17,7 +17,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Depend
 
 /**
  * The persistence driver is fit for production: the "in_memory" driver loses every record when the process ends. The
- * database schema of the "doctrine" driver is checked by the Doctrine bridge.
+ * database schema of the "doctrine" driver has its own check ({@see DatabaseSchemaCheck}).
  */
 final readonly class PersistenceCheck implements InstallationCheck
 {
@@ -36,7 +36,7 @@ final readonly class PersistenceCheck implements InstallationCheck
         }
 
         if ($this->driver === BundleConfiguration::DRIVER_DOCTRINE) {
-            return [new CheckResult(self::NAME, '', CheckStatus::Ok, 'Doctrine repositories (see the database schema check, lot 6).')];
+            return [new CheckResult(self::NAME, '', CheckStatus::Ok, 'Doctrine repositories (see the database schema check).')];
         }
 
         return [new CheckResult(self::NAME, '', CheckStatus::Ok, 'Repositories of the application ("custom" driver).')];

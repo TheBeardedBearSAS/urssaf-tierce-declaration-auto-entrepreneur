@@ -94,7 +94,7 @@ final class ChecksTest extends TestCase
 
         static::assertEquals([new CheckResult('persistence', '', CheckStatus::Warning, 'In-memory persistence: every record is lost when the process ends (tests and prototypes only).')], $inMemory);
         static::assertEquals([new CheckResult('persistence', '', CheckStatus::Ok, 'Repositories of the application ("custom" driver).')], $custom);
-        static::assertEquals([new CheckResult('persistence', '', CheckStatus::Ok, 'Doctrine repositories (see the database schema check, lot 6).')], $doctrine);
+        static::assertEquals([new CheckResult('persistence', '', CheckStatus::Ok, 'Doctrine repositories (see the database schema check).')], $doctrine);
     }
 
     public function testTheRateLimiterIsReportedOffThenByServiceThenByLimit(): void

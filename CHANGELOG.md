@@ -50,8 +50,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   Scheduler schedule of the safety crons; `urssaf:tdae:check`; en / fr translations of the violation codes; a
   `ViolationListConverter`; the Flex recipe (`recipe/`, `bin/build-flex-endpoint`, CI job `flex-endpoint`). The
   `doctrine` persistence driver is declared and refused at build time until the Doctrine bridge.
+- Doctrine bridge (`Bridge\Doctrine`, ADR 0016, [docs/doctrine.md](docs/doctrine.md)): XML mapping, 17 `urssaf_tdae_*`
+  DBAL types (SIRET, RUM, birth date, results and errors with masked conversion errors), repositories with optimistic
+  locking, key tables for the one active mandate per SIRET, the one current declaration per period and the one current
+  payment per reference, atomic claim, erasure, Doctrine outbox and workflow statistics, `DoctrineTransactionManager`; no
+  migration shipped. The `doctrine` driver of the Symfony bundle is wired (mapping and types prepended to the selected
+  entity manager, `database schema` and `entity manager` checks of `urssaf:tdae:check`) and the standalone builder gets
+  `withDoctrine()`.
 
 ### Changed
+
+- The stale submission rule counts the replay after a 401: `workflow.stale_submission_after` must be longer than four
+  times `http_timeout` (a token call and the API call, twice), instead of twice (ADR 0015 amendment, lot 6).
+- Flex recipe: no active persistence line (the default driver is `doctrine` when `doctrine/orm` is installed) and a hint
+  for a dedicated entity manager.
 
 - CI: verifiable quality proofs (Codecov, Stryker Dashboard, SonarQube Cloud, OpenSSF Scorecard; active once the
   repository is public), every GitHub Action pinned to a commit SHA and kept up to date by Dependabot, hadolint on the

@@ -37,8 +37,9 @@ Every `with...()` method returns a new builder (the builder is never modified):
 | `withLogger(LoggerInterface)` | none | Logs of the HTTP gateway (never personal data, [ADR 0010](adr/0010-personal-data.md)). |
 | `withRateLimiter(RateLimiter)` | `SlidingWindowRateLimiter` | The HTTP gateway enforces the URSSAF quota in the process; `NoopRateLimiter` disables it ([ADR 0013](adr/0013-quotas-and-rate-limit.md)). |
 | `withRateLimit(int $limit, int $windowSeconds)` | 300 per 60 s | Sizes the default limiter; an explicit `withRateLimiter()` wins. |
-| `withPolicy(WorkflowPolicy)` | see below | Page sizes, stale submission delay (must exceed the HTTP client timeout), attempts, business time zone, mandate guard, erasure opt-ins, outbox retention. Replaces the policy as given. |
+| `withPolicy(WorkflowPolicy)` | see below | Page sizes, stale submission delay (must exceed four times the HTTP client timeout: the token call and the API call, twice with the replay after a 401), attempts, business time zone, mandate guard, erasure opt-ins, outbox retention. Replaces the policy as given. |
 | `withRepositories($accounts, $mandates, $declarations, $payments, $transactions, ?$statistics)` | in-memory | Your own persistence; without statistics `getWorkflowOverview()` throws. |
+| `withDoctrine(EntityManagerInterface)` | in-memory | The Doctrine repositories, transaction manager and statistics ([doctrine.md](doctrine.md), [ADR 0016](adr/0016-doctrine-bridge.md)). It registers neither the types nor the mapping, and not the outbox: `DoctrineIntegration::registerTypes()` and `mappingDriver()` are yours, and the outbox is `withOutbox(new DoctrineOutbox($entityManager), $sink)`. Use a dedicated entity manager. |
 | `withOutbox(Outbox, IntegrationEventSink)` | no outbox | Integration events ([integration-events.md](integration-events.md)); `relayOutbox()` needs it. |
 | `withGateway(TierceDeclarationGateway)` | HTTP gateway | For instance the `Testing\SimulatedAeGateway` in tests. **Refused with `Environment::Production`** (`LogicException`): nothing but the HTTP gateway talks for a real auto-entrepreneur. |
 
@@ -46,9 +47,8 @@ Every `with...()` method returns a new builder (the builder is never modified):
 setting with two readers (the HTTP gateway and the guards, [ADR 0011](adr/0011-guards-and-opt-outs.md)).
 
 The defaults (in-memory repositories, statistics and token store) are meant for tests and prototypes: they live and die
-with the process. There is no `withDoctrine()` yet: it comes with the Doctrine bridge (lot 6, not yet). Until then give
-your own repositories and a transactional `TransactionManager` with `withRepositories()`, and a token store shared by
-every process.
+with the process. For anything else call `withDoctrine()` ([doctrine.md](doctrine.md)), or give your own repositories and a
+transactional `TransactionManager` with `withRepositories()`; and use a token store shared by every process.
 
 ## Declaring turnover
 

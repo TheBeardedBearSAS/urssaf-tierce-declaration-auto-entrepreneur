@@ -107,3 +107,25 @@ Decisions taken while implementing the bridge; they refine the items above.
   scheduled command is an idempotent read or a local move).
 - **A10 Archive**: `recipe/` and `bin/build-flex-endpoint` are `export-ignore` (Flex reads recipes-contrib or an
   endpoint built from a checkout, never the distribution archive).
+
+## Amendment (2026-11-18, lead-accepted, lot 6)
+
+- **A3 resolved**: `workflow.stale_submission_after` must be longer than `4 x http_timeout`. A call is a token call and
+  the API call, each bounded by the timeout (the default HTTP client sets `max_duration`), and the single replay after a
+  401 (ADR 0002, ADR 0003) repeats both: a threshold at or below `4 x` could reconcile a submission still in flight.
+  `ConfigurationRules::staleSubmissionNotAboveHttpTimeout()` and its message are updated; the rule is still skipped for
+  an `http_timeout` given as an environment placeholder. The default `PT15M` stays valid for any timeout below 225
+  seconds.
+- **A7 lifted**: the `doctrine` driver is wired (ADR 0016): the four repositories, `DoctrineTransactionManager` and
+  `DoctrineWorkflowStatistics` on the entity manager `persistence.entity_manager`
+  (`doctrine.orm.<name>_entity_manager`), the `DoctrineOutbox` unless `outbox.service` is set, and the mapping and the
+  DBAL types prepended to the `doctrine` extension (under `orm.entity_managers.<name>.mappings` when the entity manager
+  is not `default`; the native lazy objects stay global). The `urssaf:tdae:check` report gains the `database schema`
+  check (failure when changes are pending on the `urssaf_tdae_*` tables) and an `entity manager` warning when the name is
+  `default`. The `persistence` check message points to the schema check.
+- **Recipe**: no active `persistence` line (the default driver is `doctrine` when `doctrine/orm` is installed, else
+  `in_memory`), and a commented hint for a dedicated entity manager (`persistence: { driver: doctrine, entity_manager:
+  urssaf_tdae }`). An active `driver: doctrine` line would break the hosts without DoctrineBundle, and the recipe cannot
+  create the entity manager. The recipe version stays `0.1` (not yet published).
+- **Entity manager**: no rule beyond `cannotBeEmpty()` for `persistence.entity_manager`; the `default` warning of the
+  schema check is the guard.

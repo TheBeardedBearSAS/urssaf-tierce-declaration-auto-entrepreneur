@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Key table of the active mandates (ADR 0006, ADR 0016): one row per non-cancelled mandate, rewritten with DBAL by the
+         mandate repository in the transaction of every save. Its primary key (tenant, SIRET) is the "one active mandate
+         per SIRET" constraint, portable to every platform (a partial unique index is not). -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\ActiveMandate" table="urssaf_tdae_active_mandates" read-only="true">
+        <unique-constraints>
+            <unique-constraint name="uniq_urssaf_tdae_active_mandate_id" columns="mandate_id"/>
+        </unique-constraints>
+        <id name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <id name="siret" type="urssaf_tdae_siret" column="siret" length="14"/>
+        <field name="mandateId" type="urssaf_tdae_mandate_id" column="mandate_id" length="64"/>
+    </entity>
+</doctrine-mapping>

@@ -25,7 +25,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf
  *
  * The default persistence driver is "doctrine" when doctrine/orm is installed, "in_memory" otherwise; the "doctrine"
  * driver fails at build time without DoctrineBundle (ADR 0015 item 4), checked by the bundle while the container is
- * prepared, and is wired by the Doctrine bridge (lot 6).
+ * prepared.
  */
 final class BundleConfiguration
 {
@@ -81,7 +81,7 @@ final class BundleConfiguration
             ->end()
             ->validate()
                 ->ifTrue(ConfigurationRules::staleSubmissionNotAboveHttpTimeout(...))
-                ->thenInvalid('"workflow.stale_submission_after" must be longer than twice "http_timeout" (the API call and the token call): a submission still in flight would be reconciled (ADR 0003).')
+                ->thenInvalid('"workflow.stale_submission_after" must be longer than four times "http_timeout" (the token call and the API call, twice with the replay after a 401): a submission still in flight would be reconciled (ADR 0003).')
             ->end()
             ->children()
                 ->scalarNode('environment')
@@ -292,7 +292,7 @@ final class BundleConfiguration
             ->children()
                 ->scalarNode('stale_submission_after')
                     ->defaultValue(WorkflowPolicy::DEFAULT_STALE_SUBMISSION_AFTER)
-                    ->info('Age after which a submission left "submitting" is stale (moved to manual review, never resent). Must be longer than twice "http_timeout" (the API call and the token call).')
+                    ->info('Age after which a submission left "submitting" is stale (moved to manual review, never resent). Must be longer than four times "http_timeout" (the token call and the API call, twice with the replay after a 401).')
                     ->validate()->ifTrue(ConfigurationRules::isInvalidInterval(...))->thenInvalid('Invalid ISO 8601 duration %s.')->end()
                 ->end()
                 ->integerNode('max_submission_attempts')->min(1)->defaultValue(WorkflowPolicy::DEFAULT_MAX_SUBMISSION_ATTEMPTS)->info('Attempts after which a technical failure is no longer requeued.')->end()
@@ -334,7 +334,7 @@ final class BundleConfiguration
                 ->scalarNode('transaction_manager')->defaultNull()->info('Service id of your TransactionManager shared with the repositories (driver "custom"; default: ImmediateTransactionManager).')->end()
                 ->scalarNode('workflow_statistics')->defaultNull()->info('Service id of your WorkflowStatistics (driver "custom", optional: without it, GetWorkflowOverviewHandler is not available).')->end()
                 ->scalarNode('entity_manager')->defaultValue('default')->cannotBeEmpty()
-                    ->info('Name of the Doctrine entity manager (driver "doctrine", wired by the Doctrine bridge). Use a DEDICATED entity manager (own connection) for this package: its repositories flush the whole unit of work of the entity manager they use, which would also write pending changes of the host entities sharing it.')
+                    ->info('Name of the Doctrine entity manager (driver "doctrine"). Use a DEDICATED entity manager (own connection) for this package: its repositories flush the whole unit of work of the entity manager they use, which would also write pending changes of the host entities sharing it.')
                 ->end()
             ->end();
 

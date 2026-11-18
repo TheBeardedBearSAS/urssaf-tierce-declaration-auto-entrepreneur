@@ -54,7 +54,8 @@ and the unpublished behaviour once a period closes make an automatic resend a ho
     (`workflow.max_submission_attempts`, default 5); see the "retryable, may have reached" column of ADR 0009.
   - `ReconcileStaleDeclarations` / `ReconcileStalePayments` move records left `submitting` longer than
     `workflow.stale_submission_after` (default `PT15M`) to `outcome_unknown` with reason `stale_submission`. The value
-    must exceed the HTTP client timeout plus the token call (bundle configuration rule, `docs/workflow.md`).
+    must exceed four times the HTTP client timeout: the token call and the API call, twice with the single replay
+    after a 401 (bundle configuration rule, `docs/workflow.md`).
   - An operator checks the AE space on www.autoentrepreneur.urssaf.fr (the `certificat` identifies the summary
     shown there, §2.5) and records the result: `ResolveDeclarationOutcome::asDeclared(certificat)` or
     `::asNotReceived()` (back to `pending`; the host then calls `DeclareTurnover` again, last wins);

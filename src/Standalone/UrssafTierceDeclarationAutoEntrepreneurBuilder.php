@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Standalone;
 
 use Closure;
+use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Policy\WorkflowPolicy;
@@ -31,6 +32,12 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Work
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Service\IgnoredFailures;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Service\IgnoredOutbox;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Service\UnitOfWork;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\DoctrineTransactionManager;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineAeAccountRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineDeclarationRecordRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineMandateRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrinePaymentRecordRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineWorkflowStatistics;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AeAccountRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationRecordRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateRepository;
@@ -61,8 +68,8 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf
  * {@see UrssafGatewayFactory}, and a workflow policy whose business time zone is the one of the ApiConfiguration (one
  * setting, two readers, ADR 0011).
  *
- * There is no withDoctrine() yet: it comes with the Doctrine bridge (lot 6). Until then give your own repositories and
- * transaction manager with withRepositories().
+ * withDoctrine() wires the Doctrine repositories, transaction manager and statistics of the Doctrine bridge (ADR 0016);
+ * give your own ones with withRepositories().
  *
  * One property and one "with" method per collaborator, hence the counts.
  *
@@ -243,6 +250,24 @@ final class UrssafTierceDeclarationAutoEntrepreneurBuilder
             $builder->transactions = $transactions;
             $builder->statistics = $statistics;
         });
+    }
+
+    /**
+     * The Doctrine persistence (ADR 0016): the four repositories, the transaction manager and the statistics on the
+     * entity manager. The outbox is separate: withOutbox(new DoctrineOutbox($entityManager), $sink). The builder
+     * registers neither the types nor the mapping (DoctrineIntegration::registerTypes() and mappingDriver() are the
+     * host's); use a dedicated entity manager (docs/doctrine.md).
+     */
+    public function withDoctrine(EntityManagerInterface $entityManager): self
+    {
+        return $this->withRepositories(
+            new DoctrineAeAccountRepository($entityManager),
+            new DoctrineMandateRepository($entityManager),
+            new DoctrineDeclarationRecordRepository($entityManager),
+            new DoctrinePaymentRecordRepository($entityManager),
+            new DoctrineTransactionManager($entityManager),
+            new DoctrineWorkflowStatistics($entityManager),
+        );
     }
 
     /**

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\App;
 
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Http\Mock\Client as MockClient;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -24,6 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\DoctrineIntegration;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\UrssafTierceDeclarationAutoEntrepreneurBundle;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Credentials\InMemoryCredentialsProvider;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Outbox\InMemoryOutbox;
@@ -40,10 +42,11 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Applicatio
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Infrastructure\Urssaf\Fake\CapturingLogger;
 
 /**
- * Minimal application hosting the bundle: the framework and an in-memory Messenger transport. The URSSAF HTTP client is a mock ("test.http_client") and the clock a fixed one ("clock"). The
+ * Minimal application hosting the bundle: the framework, optionally DoctrineBundle (in-memory SQLite) and an in-memory Messenger transport. The URSSAF HTTP client is a mock ("test.http_client") and the clock a fixed one ("clock"). The
  * bundle messages are routed by namespace, so that the kernel does not depend on the message classes.
  *
- * The persistence driver is "in_memory" by default (the "doctrine" driver comes with the Doctrine bridge, lot 6).
+ * The persistence driver is "in_memory" by default; the "$doctrine" parameter is in last position, like the sibling
+ * packages.
  *
  * The compiled container is cached per configuration for the duration of the PHP process only (a stale container
  * would hide a code change, and mutation testing swaps classes under a running process).
@@ -60,17 +63,19 @@ final class TestKernel extends BaseKernel
     private static ?string $cacheRoot = null;
 
     /**
-     * @param array<string, mixed> $bundleConfig configuration of "urssaf_tierce_declaration_auto_entrepreneur", merged over the defaults
-     * @param bool                 $messenger    true to configure an in-memory "async" transport and route the bundle messages
-     * @param bool                 $lock         true to configure the framework lock component (in-memory store)
+     * @param array<string, mixed>      $bundleConfig configuration of "urssaf_tierce_declaration_auto_entrepreneur", merged over the defaults
+     * @param bool                      $messenger    true to configure an in-memory "async" transport and route the bundle messages
+     * @param bool                      $lock         true to configure the framework lock component (in-memory store)
+     * @param bool|array<string, mixed> $doctrine     true for DoctrineBundle on an in-memory SQLite, or its own configuration
      */
     public function __construct(
         private readonly array $bundleConfig = [],
         private readonly bool $messenger = false,
         private readonly bool $lock = false,
+        private readonly bool|array $doctrine = false,
     ) {
         $_ENV['URSSAF_TEST_SECRET'] = self::SECRET;
-        parent::__construct('t' . substr(md5(serialize([$bundleConfig, $messenger, $lock])), 0, 12), false);
+        parent::__construct('t' . substr(md5(serialize([$bundleConfig, $messenger, $lock, $doctrine])), 0, 12), false);
     }
 
     /**
@@ -90,6 +95,9 @@ final class TestKernel extends BaseKernel
     public function registerBundles(): iterable
     {
         yield new FrameworkBundle();
+        if ($this->doctrine !== false) {
+            yield new DoctrineBundle();
+        }
         yield new UrssafTierceDeclarationAutoEntrepreneurBundle();
     }
 
@@ -175,6 +183,12 @@ final class TestKernel extends BaseKernel
             $framework['lock'] = 'in-memory';
         }
         $container->extension('framework', $framework);
+        if ($this->doctrine !== false) {
+            $container->extension('doctrine', \is_array($this->doctrine) ? $this->doctrine : [
+                'dbal' => ['driver' => 'pdo_sqlite', 'memory' => true],
+                'orm' => ['enable_lazy_ghost_objects' => true, 'enable_native_lazy_objects' => DoctrineIntegration::nativeLazyObjectsAvailable()],
+            ]);
+        }
         $container->extension('urssaf_tierce_declaration_auto_entrepreneur', array_replace_recursive(self::defaults(), $this->bundleConfig));
 
         $services = $container->services();

@@ -24,7 +24,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Depend
 final class ConfigurationRulesTest extends TestCase
 {
     #[DataProvider('staleThresholds')]
-    public function testTheStaleThresholdMustExceedTwiceTheHttpTimeout(bool $invalid, string $stale, int|float|string|null $timeout): void
+    public function testTheStaleThresholdMustExceedFourTimesTheHttpTimeout(bool $invalid, string $stale, int|float|string|null $timeout): void
     {
         static::assertSame($invalid, ConfigurationRules::staleSubmissionNotAboveHttpTimeout(['http_timeout' => $timeout, 'workflow' => ['stale_submission_after' => $stale]]));
     }
@@ -35,12 +35,15 @@ final class ConfigurationRulesTest extends TestCase
     public static function staleThresholds(): iterable
     {
         yield 'longer' => [false, 'PT15M', 15.0];
-        yield 'one second above twice the timeout' => [false, 'PT31S', 15.0];
+        yield 'one second above four times the timeout' => [false, 'PT61S', 15.0];
+        yield 'four times the timeout' => [true, 'PT60S', 15.0];
+        yield 'one second below four times the timeout' => [true, 'PT59S', 15.0];
+        yield 'one second above twice the timeout (the replay after a 401 counts)' => [true, 'PT31S', 15.0];
         yield 'twice the timeout' => [true, 'PT30S', 15.0];
         yield 'one second below twice the timeout' => [true, 'PT29S', 15.0];
         yield 'the timeout alone' => [true, 'PT15S', 15.0];
-        yield 'integer timeout' => [true, 'PT2M', 60];
-        yield 'integer timeout, one second above' => [false, 'PT121S', 60];
+        yield 'integer timeout' => [true, 'PT4M', 60];
+        yield 'integer timeout, one second above' => [false, 'PT241S', 60];
         yield 'a month is counted in days' => [false, 'P1M', 3600.0];
         yield 'a day is counted in hours' => [true, 'P1D', 43_200.0];
         yield 'a placeholder timeout cannot be compared' => [false, 'PT1S', '%env(float:URSSAF_TIMEOUT)%'];

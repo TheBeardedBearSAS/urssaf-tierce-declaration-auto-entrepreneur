@@ -20,8 +20,8 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > process; the URSSAF documentation remains the authority on the API, and you remain responsible for the data your
 > application sends to URSSAF.
 
-> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator, the standalone builder and the
-> Symfony bundle are implemented; the Doctrine bridge follows [docs/roadmap.md](docs/roadmap.md).
+> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator, the standalone builder, the
+> Symfony bundle and the Doctrine bridge are implemented; the contract tests follow [docs/roadmap.md](docs/roadmap.md).
 
 ## Scope
 
@@ -44,7 +44,8 @@ The production contract (1.5.1) is ahead of the PDF and of the sandbox contract 
 ## Quick start (standalone)
 
 Without a framework, the builder wires every use case from a PSR-18 client, PSR-17 factories and your credentials.
-Persistence is in memory by default (tests and prototypes); [docs/standalone.md](docs/standalone.md) lists the options and
+Persistence is in memory by default (tests and prototypes): use `withDoctrine()` for anything else, see
+[Persistence](#persistence). [docs/standalone.md](docs/standalone.md) lists the options and
 [docs/workflow.md](docs/workflow.md) explains the lifecycles. All values below are fictitious.
 
 ```php
@@ -95,9 +96,10 @@ urssaf_tierce_declaration_auto_entrepreneur:
         default:
             client_id: '%env(URSSAF_TDAE_CLIENT_ID)%'
             client_secret: '%env(URSSAF_TDAE_CLIENT_SECRET)%'
-    # The Doctrine bridge is not released yet: "in_memory" loses every record at the end of the process, so give your
-    # own repositories with the "custom" driver for anything but tests.
-    persistence: { driver: in_memory }
+    # Persistence: Doctrine by default (when doctrine/orm is installed). Use a DEDICATED entity manager (docs/doctrine.md),
+    # then generate the tables with doctrine:migrations:diff. Without Doctrine give your own repositories ("custom"
+    # driver, docs/symfony.md); "in_memory" loses every record at the end of the process.
+    # persistence: { driver: doctrine, entity_manager: urssaf_tdae }
 ```
 
 Check the installation, track an account and declare a turnover (the commands never take a birth date, an IBAN or an
@@ -110,11 +112,20 @@ echo '{"period": {"year": 2026, "month": 10}, "turnover": {"sales": 1000}}' > de
 php bin/console urssaf:tdae:declare 73282932000074 --payload=declaration.json
 ```
 
+## Persistence
+
+Mandates, declarations and payments are tracked locally: the claim of a record before each submission is what prevents
+a double declaration or payment. The Doctrine bridge (ORM 3 / DBAL 4, tables prefixed `urssaf_tdae_`, no migration
+shipped, a dedicated entity manager recommended) persists them: see [docs/doctrine.md](docs/doctrine.md). Doctrine is
+optional (`suggest`); without it use the `custom` driver (your own repositories) or, for tests only, `in_memory`. No IBAN,
+BIC, holder or address is ever stored.
+
 ## Documentation
 
 - [docs/api-reference.md](docs/api-reference.md) — technical reference (single source of truth for the package).
 - [docs/symfony.md](docs/symfony.md) — Symfony bundle: Flex recipe, configuration, console commands, Messenger, Scheduler, locks.
 - [docs/standalone.md](docs/standalone.md) — wiring without a framework, scheduling, testing with the simulator.
+- [docs/doctrine.md](docs/doctrine.md) — Doctrine persistence: tables, types, dedicated entity manager, concurrency, personal data, migrations.
 - [docs/workflow.md](docs/workflow.md) — lifecycles, re-entry and settlement tables, unknown outcomes, guards, erasure.
 - [docs/integration-events.md](docs/integration-events.md) — public integration events and the outbox.
 - [docs/adr/](docs/adr/README.md) — architecture decision records (inherited architecture and its adaptations).

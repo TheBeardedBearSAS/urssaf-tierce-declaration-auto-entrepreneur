@@ -12,14 +12,10 @@ declare(strict_types=1);
 
 namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\DependencyInjection;
 
-use LogicException;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\TransactionManager;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\WorkflowStatistics;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\DependencyInjection\PersistenceRegistrar;
-use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\UrssafTierceDeclarationAutoEntrepreneurBundle;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AeAccountRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationRecordRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateRepository;
@@ -30,13 +26,11 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Persis
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Persistence\InMemory\InMemoryPaymentRecordRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Persistence\InMemory\InMemoryWorkflowStatistics;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Transaction\ImmediateTransactionManager;
-use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\App\TestKernel;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\Harness;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\Scenario;
-use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\ServicesProbe;
 
 /**
- * The persistence drivers: "in_memory" (default) and "custom"; "doctrine" is refused until the Doctrine bridge (lot 6).
+ * The persistence drivers "in_memory" (default) and "custom"; the "doctrine" one is in DoctrineWiringTest.
  */
 final class PersistenceWiringTest extends TestCase
 {
@@ -95,27 +89,6 @@ final class PersistenceWiringTest extends TestCase
 
         static::assertSame($harness->privateService('test.transactions', TransactionManager::class), $harness->privateService(TransactionManager::class, TransactionManager::class));
         static::assertSame($harness->privateService('test.statistics', WorkflowStatistics::class), $harness->privateService(WorkflowStatistics::class, WorkflowStatistics::class));
-    }
-
-    public function testTheDoctrineDriverIsRefusedAtBuildTimeUntilTheDoctrineBridge(): void
-    {
-        $registrar = new PersistenceRegistrar(ServicesProbe::of(new ContainerBuilder()));
-
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('The "doctrine" persistence driver is wired by the Doctrine bridge, not available yet: set "persistence.driver" to "in_memory" or "custom".');
-
-        $registrar->register([...self::CUSTOM, 'driver' => 'doctrine']);
-    }
-
-    public function testTheDoctrineDriverIsRefusedWhenTheExtensionLoadsTheConfiguration(): void
-    {
-        $extension = (new UrssafTierceDeclarationAutoEntrepreneurBundle())->getContainerExtension();
-        static::assertNotNull($extension);
-
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('is wired by the Doctrine bridge, not available yet');
-
-        $extension->load([[...TestKernel::defaults(), 'persistence' => ['driver' => 'doctrine']]], new ContainerBuilder(new ParameterBag(['kernel.environment' => 'test', 'kernel.debug' => false, 'kernel.project_dir' => __DIR__, 'kernel.build_dir' => __DIR__, 'kernel.cache_dir' => __DIR__])));
     }
 
     public function testTheStatisticsPredicate(): void

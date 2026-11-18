@@ -208,8 +208,11 @@ receive one e-mail per call.
 
 ## `stale_submission_after`
 
-`workflow.stale_submission_after` must exceed the HTTP client timeout plus the token call, otherwise reconciling a live
-call is a misconfiguration.
+`workflow.stale_submission_after` must exceed four times the HTTP client timeout: a call is a token call and the API
+call, each bounded by the timeout, and the single replay after a 401 doubles it (the token is renewed and the call
+resent, [ADR 0003](adr/0003-retry-and-unknown-outcome.md)). Below that, reconciling a call that is still in flight is a
+misconfiguration. With the default 15 second timeout the threshold must be longer than one minute (the default is
+`PT15M`); the Symfony bundle refuses a shorter one at build time.
 
 ## Erasure
 

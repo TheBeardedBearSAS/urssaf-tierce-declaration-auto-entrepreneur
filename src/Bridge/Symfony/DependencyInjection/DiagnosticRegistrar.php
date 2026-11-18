@@ -21,6 +21,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Comman
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\AuthenticationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\ConfigurationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\CredentialsCheck;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\DatabaseSchemaCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\InstallationCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\LockCheck;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Diagnostic\PersistenceCheck;
@@ -53,6 +54,10 @@ final readonly class DiagnosticRegistrar
         self::check($services, $gatewayCheck, $gatewayArguments);
         self::check($services, TokenStoreCheck::class, [$config['token_store']['service'], $config['token_store']['cache_pool']]);
         self::check($services, PersistenceCheck::class, [$config['persistence']['driver']]);
+        if ($config['persistence']['driver'] === BundleConfiguration::DRIVER_DOCTRINE) {
+            $entityManager = $config['persistence']['entity_manager'];
+            self::check($services, DatabaseSchemaCheck::class, [new Reference(ServiceIds::entityManager($entityManager)), $entityManager]);
+        }
         self::check($services, LockCheck::class, [new Reference(OperationLocks::class)]);
         $limiter = $config['rate_limiter'];
         self::check($services, RateLimiterCheck::class, [$limiter['enabled'], $limiter['limit'], $limiter['service'], ConfigurationRules::seconds($limiter['window'])]);

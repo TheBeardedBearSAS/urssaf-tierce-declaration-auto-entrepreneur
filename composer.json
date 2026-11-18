@@ -10,7 +10,8 @@
         "auto-entrepreneur",
         "micro-entrepreneur",
         "chiffre-d-affaires",
-        "symfony-bundle"
+        "symfony-bundle",
+        "doctrine"
     ],
     "authors": [
         {
@@ -113,6 +114,9 @@
         "symfony/scheduler": "<6.4.3"
     },
     "suggest": {
+        "doctrine/dbal": "Required by the Doctrine bridge (custom types)",
+        "doctrine/doctrine-bundle": "Required for the Doctrine bridge",
+        "doctrine/orm": "Required for the Doctrine bridge",
         "nyholm/psr7": "PSR-17 factories for the HTTP gateway and the Symfony bridge default HTTP client (any PSR-17 implementation works)",
         "symfony/cache": "PSR-6 / PSR-16 pool for the OAuth2 token cache (Psr6TokenStore, Psr16TokenStore)",
         "symfony/config": "Required by the Symfony bridge (bundle configuration)",

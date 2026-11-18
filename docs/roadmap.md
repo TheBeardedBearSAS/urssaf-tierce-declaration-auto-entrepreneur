@@ -9,8 +9,9 @@ Doctrine bridges, 100 % coverage and MSI).
 Implemented: the domain, the wire mappers, the HTTP gateway, the use cases ([workflow.md](workflow.md)), the in-memory
 persistence, the outbox, the `Testing\SimulatedAeGateway` simulator, the standalone builder
 ([standalone.md](standalone.md)) and the Symfony bundle ([symfony.md](symfony.md): configuration, `urssaf:tdae:*`
-commands, Messenger, Scheduler, locks, translations, Flex recipe). Still to come: the Doctrine bridge (lot 6), which
-the bundle's `doctrine` persistence driver waits for, then the contract tests.
+commands, Messenger, Scheduler, locks, translations, Flex recipe) and the Doctrine bridge (lot 6,
+[doctrine.md](doctrine.md): mapping, repositories, outbox, statistics, `withDoctrine()`, the bundle's `doctrine`
+driver). Still to come: the contract tests.
 
 ## Already in place (skeleton)
 
@@ -82,5 +83,5 @@ done here.
 2. Wire mappers + fixtures (both response shapes).
 3. HTTP gateway (OAuth2, errors, 429 handling).
 4. Application commands/queries (payment: no auto-retry).
-5. Symfony bridge (done), then Doctrine tracking.
+5. Symfony bridge (done), then Doctrine tracking (done).
 6. Contract tests, then remove the open points from `api-reference.md`.

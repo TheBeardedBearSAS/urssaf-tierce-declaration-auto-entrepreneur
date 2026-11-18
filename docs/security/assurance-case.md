@@ -124,7 +124,7 @@ references and the tests that prove them are added at the closing review.
 
 | Weakness (OWASP Top 10 2021 / CWE) | Countermeasure | Where, verified by |
 |---|---|---|
-| SQL injection (A03, CWE-89) | DQL and DBAL with named parameters; identifiers never built from request data (implemented in lot 6). | Doctrine bridge; PHPStan Doctrine extension, review |
+| SQL injection (A03, CWE-89) | DQL and DBAL with named parameters; identifiers never built from request data. | Doctrine bridge; PHPStan Doctrine extension, review |
 | HTTP, header and form injection (CWE-93, CWE-113) | Query string (accounts, mandate operations, SEPA path segments `siret` and `rum`) and token body built with RFC 3986 encoding; paths are constants plus encoded segments; header values come from configuration only (implemented in lot 4). | `UrssafEndpoints.php`, HTTP client; unit tests |
 | JSON injection (CWE-116) | Every key and string goes through `json_encode` with `JSON_THROW_ON_ERROR`; only null, bool, int, string, arrays and forced `{}` objects are accepted; floats are refused (implemented in lot 4). | Wire encoder; unit tests |
 | Sensitive data exposure (A02, CWE-200, CWE-532) | Logs hold the operation number, status, error codes, duration and exception class; bodies, paths, query strings and tokens are never logged. Exception messages hold violation codes and statuses, never raw values (SIRET, birth date, IBAN, holder, address). Transport errors are sanitised so that a PSR-18 exception message cannot leak a URL with a query string. Debug output is masked. Integration events carry identifiers only (implemented in lots 1 to 5). | ADR 0010, ADR 0014; unit tests |

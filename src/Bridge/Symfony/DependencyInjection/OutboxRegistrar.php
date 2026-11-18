@@ -19,6 +19,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Command\R
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\IntegrationEventSink;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Outbox;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Service\IgnoredOutbox;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineOutbox;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Outbox\MessengerIntegrationEventSink;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Event\Psr14IntegrationEventSink;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Outbox\InMemoryOutbox;
@@ -47,20 +48,25 @@ final readonly class OutboxRegistrar
 
             return;
         }
-        $this->registerOutbox($outbox['service']);
+        $this->registerOutbox($outbox['service'], $config['persistence']['driver'], $config['persistence']['entity_manager']);
         $this->registerSink($outbox['sink'], $outbox['bus']);
         $this->services->set(RelayOutboxHandler::class)->autowire()->public();
         $this->services->set(PurgeOutboxHandler::class)->autowire()->public();
     }
 
     /**
-     * Without "service", the in-memory outbox (the "custom" driver cannot reach it: it requires "outbox.service"; the
-     * Doctrine outbox of the "doctrine" driver comes with the Doctrine bridge, lot 6).
+     * Without "service", the Doctrine outbox of the "doctrine" driver, else the in-memory one (the "custom" driver
+     * cannot reach it: it requires "outbox.service").
      */
-    private function registerOutbox(?string $service): void
+    private function registerOutbox(?string $service, string $driver, string $entityManager): void
     {
         if ($service !== null) {
             $this->services->alias(Outbox::class, $service);
+
+            return;
+        }
+        if ($driver === BundleConfiguration::DRIVER_DOCTRINE) {
+            $this->services->set(Outbox::class, DoctrineOutbox::class)->args([new Reference(ServiceIds::entityManager($entityManager))]);
 
             return;
         }

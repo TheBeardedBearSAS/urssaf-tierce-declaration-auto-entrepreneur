@@ -93,9 +93,9 @@ final class BundleConfigurationValidationTest extends TestCase
      */
     public static function invalidSafetyRules(): iterable
     {
-        yield 'stale submission shorter than the timeout' => [['http_timeout' => 120.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than twice "http_timeout"'];
-        yield 'stale submission equal to the timeout' => [['http_timeout' => 60.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than twice "http_timeout"'];
-        yield 'stale submission equal to twice the timeout' => [['http_timeout' => 30.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than twice "http_timeout"'];
+        yield 'stale submission shorter than the timeout' => [['http_timeout' => 120.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than four times "http_timeout"'];
+        yield 'stale submission equal to the timeout' => [['http_timeout' => 60.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than four times "http_timeout"'];
+        yield 'stale submission equal to four times the timeout' => [['http_timeout' => 15.0, 'workflow' => ['stale_submission_after' => 'PT1M']], '"workflow.stale_submission_after" must be longer than four times "http_timeout"'];
         yield 'safe retry of a read' => [['retry_safe_writes' => ['020']], 'Unknown operation "020": only "030", "031", "050", "070" and "071" can be declared safe to retry'];
         yield 'safe retry of the estimate' => [['retry_safe_writes' => ['040']], 'Unknown operation "040"'];
         yield 'safe retry of the payment order' => [['retry_safe_writes' => ['060']], '"060" is never resent (ADR 0003): it cannot be declared safe to retry.'];

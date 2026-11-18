@@ -18,10 +18,10 @@ urssaf_tierce_declaration_auto_entrepreneur:
     #   framework.cache.pools.urssaf_tdae.token_cache: { adapter: cache.adapter.redis, provider: '%env(REDIS_DSN)%' }
     # token_store: { cache_pool: urssaf_tdae.token_cache }
 
-    # Persistence: Doctrine by default once the Doctrine bridge lands (when doctrine/orm is installed); until then choose
-    # explicitly. "in_memory" loses every record at the end of the process: give your own repositories ("custom" driver),
-    # see docs/symfony.md.
-    persistence: { driver: in_memory }
+    # Persistence: Doctrine by default (when doctrine/orm is installed). Use a DEDICATED entity manager (docs/doctrine.md),
+    # then generate the tables with doctrine:migrations:diff. Without Doctrine give your own repositories ("custom"
+    # driver, docs/symfony.md); "in_memory" loses every record at the end of the process.
+    # persistence: { driver: doctrine, entity_manager: urssaf_tdae }
     # persistence: { driver: custom, account_repository: App\Urssaf\AccountRepository, mandate_repository: App\Urssaf\MandateRepository, declaration_record_repository: App\Urssaf\DeclarationRecordRepository, payment_record_repository: App\Urssaf\PaymentRecordRepository }
 
     # Integration events for your application (docs/integration-events.md).

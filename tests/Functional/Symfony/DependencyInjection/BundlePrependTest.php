@@ -19,12 +19,15 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\DoctrineIntegration;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\UrssafTierceDeclarationAutoEntrepreneurBundle;
 
 /**
  * How the bundle reads the raw configurations to select the persistence driver while the container is prepared (ADR 0015
- * item 4): the last configuration that sets the driver wins, whatever the other ones leave out. Nothing is prepended to
- * DoctrineBundle before the Doctrine bridge (lot 6).
+ * item 4): the last configuration that sets the driver wins, whatever the other ones leave out. The "doctrine" driver
+ * prepends the mapping and the types to the selected entity manager (ADR 0016).
+ *
+ * @mago-expect lint:too-many-methods One test per way of selecting the driver and the entity manager.
  */
 final class BundlePrependTest extends TestCase
 {
@@ -89,12 +92,45 @@ final class BundlePrependTest extends TestCase
         self::prepend($container);
     }
 
-    public function testTheDoctrineDriverIsAcceptedWithDoctrineBundleAndPrependsNothingYet(): void
+    public function testTheMappingAndTheTypesAreMergedIntoTheDefaultEntityManager(): void
     {
-        $container = self::withoutDoctrine([['persistence' => ['driver' => 'doctrine']]]);
-        $doctrine = (new DoctrineBundle())->getContainerExtension();
-        static::assertNotNull($doctrine);
-        $container->registerExtension($doctrine);
+        $container = self::withDoctrine([['persistence' => ['driver' => 'doctrine']]]);
+
+        self::prepend($container);
+
+        static::assertSame([DoctrineIntegration::doctrineBundleConfiguration()], $container->getExtensionConfig('doctrine'));
+    }
+
+    public function testTheMappingMovesUnderTheNamedEntityManager(): void
+    {
+        $container = self::withDoctrine([['persistence' => ['driver' => 'doctrine', 'entity_manager' => 'urssaf_tdae']]]);
+
+        self::prepend($container);
+
+        $expected = DoctrineIntegration::doctrineBundleConfiguration();
+        $mappings = $expected['orm']['mappings'];
+        unset($expected['orm']['mappings']);
+        $expected['orm']['entity_managers'] = ['urssaf_tdae' => ['mappings' => $mappings]];
+        static::assertSame([$expected], $container->getExtensionConfig('doctrine'));
+    }
+
+    public function testTheLastConfigurationThatNamesTheEntityManagerWins(): void
+    {
+        $container = self::withDoctrine([['persistence' => ['entity_manager' => 'first']], ['persistence' => ['driver' => 'doctrine', 'entity_manager' => 'second']], ['persistence' => ['entity_manager' => 42]]]);
+
+        self::prepend($container);
+
+        // @mago-expect analysis:mixed-assignment The recorded configuration is untyped; the assertion below narrows it.
+        $orm = $container->getExtensionConfig('doctrine')[0]['orm'];
+        static::assertIsArray($orm);
+        static::assertArrayHasKey('entity_managers', $orm);
+        static::assertIsArray($orm['entity_managers']);
+        static::assertSame(['second'], array_keys($orm['entity_managers']));
+    }
+
+    public function testNothingIsPrependedWithAnotherDriverEvenWhenDoctrineBundleIsRegistered(): void
+    {
+        $container = self::withDoctrine([['persistence' => ['driver' => 'in_memory']]]);
 
         self::prepend($container);
 
@@ -113,6 +149,19 @@ final class BundlePrependTest extends TestCase
         foreach ($configs as $config) {
             $container->loadFromExtension(UrssafTierceDeclarationAutoEntrepreneurBundle::ALIAS, $config);
         }
+
+        return $container;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $configs raw configurations of the bundle, in merge order
+     */
+    private static function withDoctrine(array $configs): ContainerBuilder
+    {
+        $container = self::withoutDoctrine($configs);
+        $doctrine = (new DoctrineBundle())->getContainerExtension();
+        static::assertNotNull($doctrine);
+        $container->registerExtension($doctrine);
 
         return $container;
     }

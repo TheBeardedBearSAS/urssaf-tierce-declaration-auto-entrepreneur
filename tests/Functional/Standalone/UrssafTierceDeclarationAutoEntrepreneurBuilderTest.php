@@ -76,6 +76,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Standalone\UrssafTierceDeclarationAutoEntrepreneur;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Testing\SimulatedAeGateway;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Doctrine\Support\TestDatabase;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Application\Fake\FailingEventPublisher;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Application\Fake\FixedClock;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Application\Fake\RecordingFailureReporter;
@@ -420,6 +421,20 @@ final class UrssafTierceDeclarationAutoEntrepreneurBuilderTest extends TestCase
         $package->importMandate()(new ImportMandate(SimulatorSamples::tenant(), SimulatorSamples::siret(), null));
 
         static::assertNotNull($mandates->findActive(SimulatorSamples::tenant(), SimulatorSamples::siret()));
+    }
+
+    public function testTheDoctrinePersistenceIsWiredOnTheEntityManager(): void
+    {
+        $entityManager = TestDatabase::entityManager();
+        $package = self::builder()->withGateway(new SimulatedAeGateway())->withDoctrine($entityManager)->build();
+
+        $package->importMandate()(new ImportMandate(SimulatorSamples::tenant(), SimulatorSamples::siret(), null));
+
+        $connection = $entityManager->getConnection();
+        static::assertSame(1, $connection->fetchOne('SELECT COUNT(*) FROM urssaf_tdae_mandates'));
+        static::assertSame(1, $connection->fetchOne('SELECT COUNT(*) FROM urssaf_tdae_active_mandates'));
+        $overview = $package->getWorkflowOverview()(GetWorkflowOverview::forTenant(SimulatorSamples::tenant()));
+        static::assertSame(1, $overview[0]->mandates['notified']);
     }
 
     public function testTheOverviewNeedsStatistics(): void

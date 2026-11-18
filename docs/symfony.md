@@ -7,11 +7,6 @@ The decisions behind it are in [ADR 0015](adr/0015-symfony-bridge.md).
 Names at a glance: console commands `urssaf:tdae:*`, locks and Messenger / Scheduler names `urssaf_tdae`, environment
 variables `URSSAF_TDAE_*`, monolog channel `urssaf_tdae`.
 
-> [!NOTE]
-> **Persistence.** The Doctrine bridge is not released yet: the `doctrine` driver is declared (and is the default when
-> `doctrine/orm` is installed) but the container refuses to build with it. Until then set `persistence.driver` to
-> `in_memory` (tests only: every record is lost at the end of the process) or `custom` (your own repositories).
-
 ## Symfony Flex recipe
 
 The recipe lives in `recipe/thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur/<version>/` (manifest and copied
@@ -74,14 +69,14 @@ The configuration tree is defined in `Bridge\Symfony\DependencyInjection\BundleC
 | `scheduler.frequencies.purge_outbox` | ISO 8601 duration \| null | `P1D` | `urssaf:tdae:outbox:purge` (ignored without the outbox). |
 | `messenger.enabled` | bool | `false` | Registers the two Messenger handlers. |
 | `messenger.bus` | string | `messenger.default_bus` | Bus of `urssaf:tdae:account:sync --async`. |
-| `persistence.driver` | enum `in_memory` \| `doctrine` \| `custom` | `doctrine` if `doctrine/orm` is installed, else `in_memory` | Persistence adapter (see the note at the top: `doctrine` is wired by the Doctrine bridge). |
+| `persistence.driver` | enum `in_memory` \| `doctrine` \| `custom` | `doctrine` if `doctrine/orm` is installed, else `in_memory` | Persistence adapter, see [Persistence](#persistence). |
 | `persistence.account_repository` | string \| null | `null` | Service id of your `AeAccountRepository` (driver `custom`). |
 | `persistence.mandate_repository` | string \| null | `null` | Service id of your `MandateRepository` (driver `custom`). |
 | `persistence.declaration_record_repository` | string \| null | `null` | Service id of your `DeclarationRecordRepository` (driver `custom`). |
 | `persistence.payment_record_repository` | string \| null | `null` | Service id of your `PaymentRecordRepository` (driver `custom`). |
 | `persistence.transaction_manager` | string \| null | `null` | Service id of your `TransactionManager` (driver `custom`; default: `ImmediateTransactionManager`). |
 | `persistence.workflow_statistics` | string \| null | `null` | Service id of your `WorkflowStatistics` (driver `custom`, optional: without it `GetWorkflowOverviewHandler` is not registered). |
-| `persistence.entity_manager` | string | `default` | Entity manager of the Doctrine bridge (declared so that the tree is final). |
+| `persistence.entity_manager` | string | `default` | Name of the Doctrine entity manager (driver `doctrine`): the package mapping and types are attached to it. Use a dedicated one ([doctrine.md](doctrine.md)); `urssaf:tdae:check` warns when it is `default`. |
 | `workflow.stale_submission_after` | ISO 8601 duration | `PT15M` | Age after which a `submitting` record is considered stale. |
 | `workflow.max_submission_attempts` | int >= 1 | `WorkflowPolicy::DEFAULT_MAX_SUBMISSION_ATTEMPTS` | Submission attempts after which a technical failure is no longer requeued. |
 | `workflow.require_local_mandate` | bool | `true` | `declare`, `pay` and `estimate` require a local mandate unless `--skip-mandate-check` is given (ADR 0011). |
@@ -100,13 +95,15 @@ Validation rules enforced at container build time:
   `headers.application_id.name` must be different headers.
 - `retry_safe_writes` only accepts `"030"`, `"031"`, `"050"`, `"070"` and `"071"`.
 - `rate_limiter.service` requires `rate_limiter.enabled: true`.
-- `workflow.stale_submission_after` must be longer than twice `http_timeout` (the API call and the token call, each
-  bounded by the timeout): a submission still in flight would otherwise be reconciled (ADR 0003).
+- `workflow.stale_submission_after` must be longer than four times `http_timeout` (a token call and the API call, each
+  bounded by the timeout, and twice because of the single replay after a 401): a submission still in flight would
+  otherwise be reconciled (ADR 0003, ADR 0015 amendment lot 6). The default `PT15M` is far above `4 x 15 s`.
+  An `http_timeout` given as an environment placeholder cannot be compared at build time and is skipped.
 - `workflow.default_page_size` must not exceed `workflow.max_page_size`.
 - `outbox.enabled` with the `custom` driver requires `outbox.service`.
 - The `custom` driver requires the four repository service ids.
 - `lock.enabled: true` requires `symfony/lock`; `scheduler.enabled: true` requires `symfony/scheduler`.
-- The `doctrine` driver requires DoctrineBundle, and is refused until the Doctrine bridge is released.
+- The `doctrine` driver requires DoctrineBundle (`doctrine/doctrine-bundle`); the container build fails without it.
 
 The `in_memory` driver keeps everything in the process memory: use it for tests only.
 
@@ -137,7 +134,13 @@ request a token per run. Tokens are secrets: do not expose the pool through a ca
 |---|---|
 | `in_memory` | Tests and prototypes: every record is lost at the end of the process. |
 | `custom` | Your own repositories and transaction manager (`persistence.*` service ids). Records must survive between runs: the claim of a declaration or a payment (ADR 0009) is what prevents a double submission. |
-| `doctrine` | Default when `doctrine/orm` is installed. Wired by the Doctrine bridge, which is not released yet: the container refuses to build with it ("the doctrine persistence driver is wired by the Doctrine bridge, not available yet"). Without DoctrineBundle it fails earlier with a message naming `doctrine/doctrine-bundle`. |
+| `doctrine` | Default when `doctrine/orm` is installed. The four repositories, the transaction manager and the statistics on the entity manager `persistence.entity_manager`, the Doctrine outbox (unless `outbox.service` is set), and the package mapping and DBAL types prepended to that entity manager only. Use a **dedicated entity manager**; the schema is yours (`doctrine:migrations:diff`). See [doctrine.md](doctrine.md). Without DoctrineBundle the build fails with a message naming `doctrine/doctrine-bundle`. |
+
+```yaml
+# driver doctrine, with a dedicated entity manager declared in the configuration of DoctrineBundle (docs/doctrine.md)
+urssaf_tierce_declaration_auto_entrepreneur:
+    persistence: { driver: doctrine, entity_manager: urssaf_tdae }
+```
 
 ```yaml
 urssaf_tierce_declaration_auto_entrepreneur:
@@ -231,10 +234,10 @@ fails (warnings do not fail): run it after each deployment, or in the CI of the 
 | `authentication` | failure: URSSAF refuses the credentials or cannot be reached. A new access token is requested for every tenant (any cached one is ignored), the tokens of the application are not touched. Skipped with `--skip-remote`; replaced by a `simulated gateway` warning when `gateway.simulated` is enabled |
 | `token store` | warning: the tokens are stored in `cache.app` instead of a dedicated pool |
 | `persistence` | warning: driver `in_memory` |
+| `database schema` | failure: schema changes are pending on the `urssaf_tdae_*` tables (driver `doctrine`); run `doctrine:migrations:diff` |
+| `entity manager` | warning: the `default` entity manager is used (driver `doctrine`), it should be dedicated |
 | `lock` | warning: the lock is disabled or `symfony/lock` is missing |
 | `rate limiter` | warning: `rate_limiter.limit` above the published 300 per minute |
-
-The database schema check comes with the Doctrine bridge.
 
 Add checks of your own by implementing `Bridge\Symfony\Diagnostic\InstallationCheck` (autoconfigured, tag
 `urssaf_tierce_declaration_auto_entrepreneur.installation_check`).

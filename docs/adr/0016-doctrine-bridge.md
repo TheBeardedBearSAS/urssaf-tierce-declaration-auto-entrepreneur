@@ -75,3 +75,41 @@ rule within a tenant (ADR 0012), records claimed by an atomic update before any 
   transaction as the record, like `urssaf_tdae_current_declarations`.
 - Added columns: `supersedes` / `superseded_by` on payment records, `accepted_after_supersession` on declaration
   records, `cancellation_origin` on mandates; `account_id` is nullable on mandates and records.
+
+## Amendment (2026-11-18, lead-accepted, lot 6)
+
+Decisions taken while implementing the bridge; they refine the items above.
+
+- **Types.** 17 DBAL types, in this order in `DoctrineIntegration::types()`: `urssaf_tdae_tenant_id`, `_siret`,
+  `_account_id`, `_mandate_id`, `_declaration_record_id`, `_payment_record_id`, `_payment_reference`, `_rum`,
+  `_declaration_fingerprint`, `_payment_fingerprint`, `_calendar_date`, `_birth_date`, `_instant` (UTC, second precision),
+  `_euros` (integer, whole euros), `_declaration_result`, `_payment_result`, `_submission_errors` (JSON). Masked (item 7:
+  a conversion error never quotes the value, in both directions): SIRET, RUM, birth date and the three JSON types. A
+  stored value the domain refuses is a DBAL `InvalidFormat`, masked or not. The results are rebuilt with
+  `Certificate::fromResponse()` (tolerant: a stored certificate from a 200 answer need not match `^\d{8}$`, ADR 0009
+  amendment) in the resolved shape (certificate alone) or the accepted shape (identifier, due date, amounts or period);
+  any other mix is refused.
+- **Schema.** Eight tables: `urssaf_tdae_accounts`, `_mandates`, `_declaration_records`, `_payment_records`, the key
+  tables `_active_mandates`, `_current_declarations`, `_current_payments` and `_outbox`. The payment amount column is
+  `montant` (items 2 and 5). Indexes and unique constraints are prefixed (`uniq_urssaf_tdae_*`, `idx_urssaf_tdae_*`); the
+  outbox carries two nullable columns, `aggregate_id` (a SEPA event has none) and `external_reference`, the host's own
+  key (not personal data), so that a host can find the entries of a payment reference. `birth_date` exists in
+  `urssaf_tdae_accounts` only; no IBAN, BIC, holder or address column exists anywhere.
+- **Save protocol.** A stale managed copy, or an unmanaged instance whose identifier is stored, is refused **before any
+  flush** with `<aggregate>.concurrent_modification` (no parameter) and detached; the domain uniqueness guard then runs
+  (concurrency is checked first, then uniqueness, as in memory); persist, flush and the key row are written in one DBAL
+  transaction. A violation of a key table is reported as the domain duplicate when the guard now finds one, as
+  `concurrent_modification` when the identifier now exists, else rethrown. `OptimisticLockException` (the version
+  column) is the backstop and maps to `concurrent_modification`.
+- **Key rows** are rewritten after the flush: delete by record id, then insert only when the mandate is active or the
+  record is current. A supersession saves the superseded record first (its key row goes), then the new one.
+- **Claim.** The conditional `UPDATE` also requires the record to be current (`superseded_by IS NULL`, the port
+  contract); it keeps the errors and the result and does not touch the key tables.
+- **Erasure.** `deleteBySiret()`: select the ids in the given states, detach their managed copies, delete with the same
+  condition (a record claimed in between survives, ADR 0017 item 4), remove the key rows of the records that are gone only.
+- **Ordering** follows the port documentation and the in-memory order: the key, then the identifier.
+- **Transaction manager** detaches the four aggregates only on rollback (never the key or outbox entities, which are
+  never managed), rethrows unchanged, never closes the entity manager.
+- **Tests.** The races (a write between the guard and the flush, a delete between the select and the delete) are
+  provoked through the DBAL logging middleware (`Doctrine\DBAL\Logging\Middleware` over a PSR logger of the tests): no
+  `noExtends` entry beyond the DBAL `Type` base class.

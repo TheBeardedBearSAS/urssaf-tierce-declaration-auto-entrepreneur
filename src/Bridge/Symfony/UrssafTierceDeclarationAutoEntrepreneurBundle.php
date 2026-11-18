@@ -17,6 +17,7 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\DoctrineIntegration;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\DependencyInjection\BundleConfiguration;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\DependencyInjection\ConfigurationRules;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\DependencyInjection\ServiceIds;
@@ -50,19 +51,29 @@ final class UrssafTierceDeclarationAutoEntrepreneurBundle extends AbstractBundle
     }
 
     /**
-     * Fails fast when the "doctrine" persistence driver is selected (the default when the ORM is installed) and
-     * DoctrineBundle is not registered: this method receives the real container, whereas {@see loadExtension()}
-     * receives a per-extension container where no other extension is visible (ADR 0015 item 4). The Doctrine mapping
-     * is prepended by the Doctrine bridge (lot 6): nothing is prepended yet.
+     * Maps the aggregates with Doctrine when the "doctrine" persistence driver is selected (the default when the ORM is
+     * installed). Fails fast when DoctrineBundle is not registered: this method receives the real container, whereas
+     * {@see loadExtension()} receives a per-extension container where no other extension is visible (ADR 0015 item 4,
+     * ADR 0016).
      *
      * @throws LogicException the "doctrine" driver is selected and DoctrineBundle is not registered
      */
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
-        $driver = self::selectedDriver($container->getExtensionConfig(self::ALIAS));
-        if (ConfigurationRules::doctrineDriverWithoutBundle($driver, $container->hasExtension('doctrine'))) {
+        $persistence = self::selectedPersistence($container->getExtensionConfig(self::ALIAS));
+        if (ConfigurationRules::doctrineDriverWithoutBundle($persistence['driver'], $container->hasExtension('doctrine'))) {
             throw new LogicException('The "doctrine" persistence driver requires DoctrineBundle (doctrine/doctrine-bundle): register it, or set "persistence.driver" to "in_memory" or "custom".');
         }
+        if (!$container->hasExtension('doctrine') || $persistence['driver'] !== BundleConfiguration::DRIVER_DOCTRINE) {
+            return;
+        }
+        $doctrine = DoctrineIntegration::doctrineBundleConfiguration();
+        if ($persistence['entity_manager'] !== 'default') {
+            $mappings = $doctrine['orm']['mappings'];
+            unset($doctrine['orm']['mappings']);
+            $doctrine['orm']['entity_managers'] = [$persistence['entity_manager'] => ['mappings' => $mappings]];
+        }
+        $container->prependExtensionConfig('doctrine', $doctrine);
     }
 
     /**
@@ -80,15 +91,23 @@ final class UrssafTierceDeclarationAutoEntrepreneurBundle extends AbstractBundle
 
     /**
      * @param array<array-key, array<array-key, mixed>> $configs raw configurations of the bundle, in merge order
+     *
+     * @return array{driver: string, entity_manager: string}
      */
-    private static function selectedDriver(array $configs): string
+    private static function selectedPersistence(array $configs): array
     {
-        $driver = BundleConfiguration::defaultDriver();
+        $selected = ['driver' => BundleConfiguration::defaultDriver(), 'entity_manager' => 'default'];
         foreach ($configs as $config) {
             $persistence = \is_array($config['persistence'] ?? null) ? $config['persistence'] : [];
-            $driver = \is_string($persistence['driver'] ?? null) ? $persistence['driver'] : $driver;
+            $selected['driver'] = self::stringOr($persistence['driver'] ?? null, $selected['driver']);
+            $selected['entity_manager'] = self::stringOr($persistence['entity_manager'] ?? null, $selected['entity_manager']);
         }
 
-        return $driver;
+        return $selected;
+    }
+
+    private static function stringOr(mixed $value, string $default): string
+    {
+        return \is_string($value) ? $value : $default;
     }
 }

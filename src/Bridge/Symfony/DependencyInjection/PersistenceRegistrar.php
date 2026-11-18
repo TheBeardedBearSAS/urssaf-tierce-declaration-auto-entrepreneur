@@ -12,11 +12,16 @@ declare(strict_types=1);
 
 namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\DependencyInjection;
 
-use LogicException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Symfony\Component\DependencyInjection\Reference;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\TransactionManager;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\WorkflowStatistics;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\DoctrineTransactionManager;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineAeAccountRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineDeclarationRecordRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineMandateRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrinePaymentRecordRepository;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Repository\DoctrineWorkflowStatistics;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AeAccountRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Declaration\DeclarationRecordRepository;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateRepository;
@@ -30,9 +35,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Transa
 
 /**
  * Repositories, transaction manager and statistics of the selected persistence driver ("in_memory", "doctrine" or
- * "custom"), ADR 0015 item 4.
- *
- * The "doctrine" driver is wired by the Doctrine bridge (lot 6): until then selecting it fails the build.
+ * "custom"), ADR 0015 item 4 and ADR 0016.
  *
  * @phpstan-type Persistence array{driver: string, account_repository: ?string, mandate_repository: ?string, declaration_record_repository: ?string, payment_record_repository: ?string, transaction_manager: ?string, workflow_statistics: ?string, entity_manager: string}
  */
@@ -42,13 +45,13 @@ final readonly class PersistenceRegistrar
 
     /**
      * @param Persistence $persistence
-     *
-     * @throws LogicException the "doctrine" driver is selected (not available yet)
      */
     public function register(array $persistence): void
     {
         if ($persistence['driver'] === BundleConfiguration::DRIVER_DOCTRINE) {
-            throw new LogicException('The "doctrine" persistence driver is wired by the Doctrine bridge, not available yet: set "persistence.driver" to "in_memory" or "custom".');
+            $this->registerDoctrine(new Reference(ServiceIds::entityManager($persistence['entity_manager'])));
+
+            return;
         }
         if ($persistence['driver'] === BundleConfiguration::DRIVER_CUSTOM) {
             $this->registerCustom($persistence);
@@ -88,6 +91,16 @@ final readonly class PersistenceRegistrar
         if ($persistence['workflow_statistics'] !== null) {
             $this->services->alias(WorkflowStatistics::class, $persistence['workflow_statistics']);
         }
+    }
+
+    private function registerDoctrine(Reference $entityManager): void
+    {
+        $this->services->set(AeAccountRepository::class, DoctrineAeAccountRepository::class)->args([$entityManager]);
+        $this->services->set(MandateRepository::class, DoctrineMandateRepository::class)->args([$entityManager]);
+        $this->services->set(DeclarationRecordRepository::class, DoctrineDeclarationRecordRepository::class)->args([$entityManager]);
+        $this->services->set(PaymentRecordRepository::class, DoctrinePaymentRecordRepository::class)->args([$entityManager]);
+        $this->services->set(TransactionManager::class, DoctrineTransactionManager::class)->args([$entityManager]);
+        $this->services->set(WorkflowStatistics::class, DoctrineWorkflowStatistics::class)->args([$entityManager]);
     }
 
     private function registerTransactionManager(?string $service): void
