@@ -19,6 +19,7 @@ use Symfony\Component\Lock\Store\InMemoryStore;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\Lock\OperationLocks;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\Siret;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Tenant\TenantId;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\HeldNonWaitingStore;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\RecordingStore;
 
 /**
@@ -148,12 +149,9 @@ final class OperationLocksTest extends TestCase
 
     public function testItNeverWaitsForTheLock(): void
     {
-        $factory = new LockFactory(new InMemoryStore());
-        $other = $factory->createLock(OperationLocks::resource('op', 'tenant-1'));
-        static::assertTrue($other->acquire());
-
-        // A blocking acquisition on this store would poll forever: the call returns because it is not blocking.
-        $result = (new OperationLocks($factory, 90.5))->exclusively('op', 'tenant-1', static fn(): string => 'ran', static fn(): string => 'busy');
+        // The store is held by another process and fails a blocking acquisition at once: the call returns "busy" only
+        // because the acquisition is not blocking.
+        $result = (new OperationLocks(new LockFactory(new HeldNonWaitingStore()), 90.5))->exclusively('op', 'tenant-1', static fn(): string => 'ran', static fn(): string => 'busy');
 
         static::assertSame('busy', $result);
     }

@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Mutation testing evaluates every mutant: `make infection` and the CI job now fail on a timed-out or syntax-error mutant
+  as well as a skipped one (`timeoutsAsEscaped`). The mandate retry loop is bounded (no `while (true)`) and the
+  non-blocking lock acquisition is observed by a test double, so every mutant terminates; a few comparisons were
+  rewritten so that no mutant is invalid PHP.
+
 ## [0.1.0] - 2026-11-18
 
 First release.
