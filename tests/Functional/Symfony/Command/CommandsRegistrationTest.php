@@ -96,7 +96,8 @@ final class CommandsRegistrationTest extends TestCase
     #[DataProvider('definitions')]
     public function testTheArgumentsAndTheOptionsOfACommand(string $name, array $required, array $optional, array $valued, array $flags): void
     {
-        $definition = (new Application(Harness::boot()->kernel))->find($name)->getDefinition();
+        $harness = Harness::boot();
+        $definition = (new Application($harness->kernel))->find($name)->getDefinition();
 
         static::assertSame([...$required, ...$optional], array_keys($definition->getArguments()));
         static::assertSame($required, array_keys(array_filter($definition->getArguments(), static fn(InputArgument $argument): bool => $argument->isRequired())));
@@ -129,7 +130,8 @@ final class CommandsRegistrationTest extends TestCase
 
     public function testTheOutboxCommandsDefinitions(): void
     {
-        $application = new Application(Harness::boot(['outbox' => ['enabled' => true]])->kernel);
+        $harness = Harness::boot(['outbox' => ['enabled' => true]]);
+        $application = new Application($harness->kernel);
 
         static::assertSame(['limit'], array_keys($application->find('urssaf:tdae:outbox:relay')->getDefinition()->getOptions()));
         static::assertSame(['older-than'], array_keys($application->find('urssaf:tdae:outbox:purge')->getDefinition()->getOptions()));
@@ -138,7 +140,8 @@ final class CommandsRegistrationTest extends TestCase
 
     public function testEveryCommandHasADescription(): void
     {
-        $application = new Application(Harness::boot(['outbox' => ['enabled' => true]])->kernel);
+        $harness = Harness::boot(['outbox' => ['enabled' => true]]);
+        $application = new Application($harness->kernel);
 
         foreach ([...array_keys(self::commands()), ...self::OUTBOX_COMMANDS] as $name) {
             static::assertNotSame('', $application->find($name)->getDescription(), $name);
@@ -147,7 +150,8 @@ final class CommandsRegistrationTest extends TestCase
 
     public function testNoCommandAcceptsAPersonalValueAsAnOption(): void
     {
-        $application = new Application(Harness::boot(['outbox' => ['enabled' => true]])->kernel);
+        $harness = Harness::boot(['outbox' => ['enabled' => true]]);
+        $application = new Application($harness->kernel);
 
         foreach ($application->all('urssaf:tdae') as $command) {
             foreach (array_keys($command->getDefinition()->getOptions()) as $option) {

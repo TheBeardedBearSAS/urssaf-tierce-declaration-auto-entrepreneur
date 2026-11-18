@@ -60,7 +60,8 @@ final class BundleSurfaceTest extends TestCase
     public function testTheBundleProvidesExactlyTheDocumentedCommands(): void
     {
         $names = [];
-        foreach ((new Application(Harness::boot(self::FULL, true)->kernel))->all('urssaf:tdae') as $key => $command) {
+        $harness = Harness::boot(self::FULL, true);
+        foreach ((new Application($harness->kernel))->all('urssaf:tdae') as $key => $command) {
             $name = $command->getName();
             if ($name !== null && $key === $name) {
                 $names[] = $name;
