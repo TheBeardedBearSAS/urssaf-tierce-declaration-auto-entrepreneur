@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+ *
+ * Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\DependencyInjection;
+
+use PHPUnit\Framework\TestCase;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\CredentialsNotSerializable;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\CredentialsProvider;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Tenant\TenantId;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\App\TestKernel;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Functional\Symfony\Support\Harness;
+
+final class SecretsTest extends TestCase
+{
+    public function testTheContainerDumpOnlyShowsTheEnvironmentPlaceholderOfTheSecret(): void
+    {
+        $dump = (new TestKernel())->containerAsYaml();
+
+        static::assertStringNotContainsString(TestKernel::SECRET, $dump);
+        static::assertStringContainsString('URSSAF_TEST_SECRET', $dump);
+    }
+
+    public function testTheCredentialsMaskTheirSecretWhenDumped(): void
+    {
+        $provider = Harness::boot()->privateService(CredentialsProvider::class, CredentialsProvider::class);
+        $credentials = $provider->forTenant(TenantId::fromString('tenant-1'));
+
+        static::assertSame(TestKernel::SECRET, $credentials->clientSecret());
+        ob_start();
+        // @mago-expect lint:no-debug-symbols The dump of the credentials is exactly what is under test.
+        var_dump($provider, $credentials);
+        $dump = (string) ob_get_clean();
+        static::assertStringContainsString('client-1', $dump);
+        static::assertStringNotContainsString(TestKernel::SECRET, $dump);
+        static::assertStringNotContainsString(TestKernel::SECRET, print_r($credentials, true));
+
+        $this->expectException(CredentialsNotSerializable::class);
+
+        serialize($credentials);
+    }
+}

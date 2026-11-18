@@ -19,7 +19,7 @@ UNIT_FUNCTIONAL := --testsuite=$(SUITES)
 
 .DEFAULT_GOAL := help
 .PHONY: help build install update shell test test-unit test-functional test-contract coverage coverage-paths coverage-branches \
-	bench infection phpstan mago cs cs-fix rector rector-fix deptrac composer-checks hadolint guard ci
+	bench infection phpstan mago cs cs-fix rector rector-fix deptrac composer-checks hadolint guard flex-endpoint ci
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-16s %s\n", $$1, $$2}'
@@ -106,5 +106,8 @@ guard: ## Fail on the forbidden word or a missing SPDX licence header
 		echo "Forbidden word found (see files above)"; exit 1; \
 	fi
 	$(PHP) sh bin/check-spdx
+
+flex-endpoint: ## Build the Flex endpoint of the recipe in var/flex-endpoint
+	$(PHP) php bin/build-flex-endpoint var/flex-endpoint https://flex.invalid/urssaf-tdae
 
 ci: cs rector phpstan mago deptrac composer-checks hadolint guard coverage infection ## Full quality gate

@@ -77,3 +77,33 @@ turnover; ADR 0010).
 
 - Documented in `docs/symfony.md`; the standalone builder (`docs/standalone.md`) refuses a custom gateway with
   `Environment::Production`, since `Standalone` cannot recognise the `Testing` simulator.
+
+## Amendment (2026-11-18, lead-accepted, lot 5)
+
+Decisions taken while implementing the bridge; they refine the items above.
+
+- **A1 Reconcile locks are global** (`declarations.reconcile.all`, `payments.reconcile.all`): `ReconcileStale*($limit)`
+  is cross-tenant, so a per-tenant lock would not exclude two runs (amends item 10).
+- **A2 Mandate and account lock scope = tenant + SIRET digest**, not the account id: mandates and records exist
+  without a tracked `AeAccount` (ADR 0016 amendment), and two selectors of one SIRET must take one key. The digest (first
+  32 hexadecimal characters of the SHA-256) is pseudonymous, not anonymous (14 digits can be enumerated): it keeps the
+  SIRET out of the lock store keys and the logs, nothing more. Also amends ADR 0017 item 6 (`account:forget` lock).
+- **A3 Stale rule**: `workflow.stale_submission_after` must be longer than `2 x http_timeout` (the API call and the token
+  call); the default HTTP client sets `max_duration` so that the timeout bounds a call. Open: whether the single replay
+  after a 401 should count (`4 x`).
+- **A4 `pay` input**: `pay <siret> <payment-reference> --payload` (`period`, `amount`; amounts never on the command
+  line, ADR 0010 / 0014), `--rum` option, the IBAN only through `--with-iban` (hidden prompt).
+- **A5 Selectors**: `declarations:resolve [siret] --period=YYYY-MM|YYYY-Tn` or `--record-id`; `payments:resolve
+  [payment-reference]` or `--record-id`; `account:forget [siret]` or `--account-id` (ADR 0017).
+- **A6 Extra configuration keys**: `workflow.default_page_size` / `max_page_size` (they exist in `WorkflowPolicy`),
+  `persistence.*_repository` including `payment_record_repository`, `persistence.transaction_manager` /
+  `workflow_statistics`; `rate_limiter.service` requires `rate_limiter.enabled`; `retry_safe_writes` refuses `"060"`
+  with its own message (ADR 0003).
+- **A7 Doctrine in lot 5**: the driver is declared and is the default when `doctrine/orm` is installed, but the
+  container refuses to build with it until the Doctrine bridge (lot 6); the `check` schema line comes with it.
+- **A8 Recipe SPDX header**: the recipe YAML carries the licence header; `bin/check-spdx` still excludes `recipe/`.
+- **A9 Scheduler failures**: `RunCommandMessage` keeps its default `throwOnFailure`: a scheduled command that exits
+  `1` (a reconcile that moved records, a failed sync item) fails its message, which the transport retries (every
+  scheduled command is an idempotent read or a local move).
+- **A10 Archive**: `recipe/` and `bin/build-flex-endpoint` are `export-ignore` (Flex reads recipes-contrib or an
+  endpoint built from a checkout, never the distribution archive).

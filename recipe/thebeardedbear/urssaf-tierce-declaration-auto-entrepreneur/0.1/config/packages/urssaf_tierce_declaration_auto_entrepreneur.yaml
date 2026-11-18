@@ -1,0 +1,44 @@
+# This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+#
+# Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+#
+# SPDX-License-Identifier: MIT
+
+# URSSAF "API Tierce Déclaration auto-entrepreneur": every option is described in the docs/symfony.md file of the package.
+urssaf_tierce_declaration_auto_entrepreneur:
+    environment: '%env(URSSAF_TDAE_ENV)%'      # sandbox | production
+
+    # One entry per platform account (tenant); or "credentials_provider: <service id>" to read them from your database.
+    credentials:
+        default:
+            client_id: '%env(URSSAF_TDAE_CLIENT_ID)%'
+            client_secret: '%env(URSSAF_TDAE_CLIENT_SECRET)%'
+
+    # The access tokens must be shared by every process (web, workers, crons): declare a dedicated pool, e.g.
+    #   framework.cache.pools.urssaf_tdae.token_cache: { adapter: cache.adapter.redis, provider: '%env(REDIS_DSN)%' }
+    # token_store: { cache_pool: urssaf_tdae.token_cache }
+
+    # Persistence: Doctrine by default once the Doctrine bridge lands (when doctrine/orm is installed); until then choose
+    # explicitly. "in_memory" loses every record at the end of the process: give your own repositories ("custom" driver),
+    # see docs/symfony.md.
+    persistence: { driver: in_memory }
+    # persistence: { driver: custom, account_repository: App\Urssaf\AccountRepository, mandate_repository: App\Urssaf\MandateRepository, declaration_record_repository: App\Urssaf\DeclarationRecordRepository, payment_record_repository: App\Urssaf\PaymentRecordRepository }
+
+    # Integration events for your application (docs/integration-events.md).
+    # outbox: { enabled: true, sink: messenger }
+
+    # Safety crons of the package as a Symfony Scheduler schedule ("messenger:consume scheduler_urssaf_tdae").
+    # scheduler: { enabled: true }
+
+    # Rate limit of the platform: 300 requests per minute (ADR 0013); off by default, enable it for a shared client.
+    # rate_limiter: { enabled: true, limit: 300, window: PT60S }
+
+    # Writes the package never resends on its own. 060 (the payment order) can never be declared safe to retry.
+    # "050" (turnover declaration) e-mails the auto-entrepreneur at every resend: enable it only once the sandbox proves it
+    # idempotent. Quote the codes.
+    # retry_safe_writes: ['030', '031', '070', '071']
+
+when@test:
+    urssaf_tierce_declaration_auto_entrepreneur:
+        # The in-memory URSSAF platform of the package: nothing is sent to URSSAF (docs/standalone.md).
+        gateway: { simulated: true }

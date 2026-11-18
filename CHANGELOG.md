@@ -37,10 +37,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and manual resolution of unknown outcomes, requeue after invalid credentials, account erasure (GDPR), workflow
   overview (`docs/workflow.md`).
 - `Testing\SimulatedAeGateway` and the standalone builder and facade (`docs/standalone.md`).
+- Symfony bundle `UrssafTierceDeclarationAutoEntrepreneurBundle` (`docs/symfony.md`): configuration with build-time
+  rules, `urssaf:tdae:*` console commands (personal data through hidden prompts or payload files only), Messenger
+  account sync, locks, scheduler, outbox sink, diagnostics, translations (en, fr) and a Flex recipe.
 - Use cases, simulator, standalone: the commands and queries for accounts, mandates, declarations, payments, SEPA
   mandates, erasure and the outbox (`docs/workflow.md`), the `Testing\SimulatedAeGateway` in-memory platform for the tests
   of a host application, and the framework-free `Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder`
   (`docs/standalone.md`). Deptrac layers `Testing` and `Standalone`.
+- Symfony bundle `UrssafTierceDeclarationAutoEntrepreneurBundle` (`docs/symfony.md`, ADR 0015): configuration tree and
+  container wiring of the HTTP gateway, the use cases, the outbox and the lock; the 20 `urssaf:tdae:*` console commands
+  (personal data only through hidden prompts and payload files); Messenger handlers for the account sync only; a
+  Scheduler schedule of the safety crons; `urssaf:tdae:check`; en / fr translations of the violation codes; a
+  `ViolationListConverter`; the Flex recipe (`recipe/`, `bin/build-flex-endpoint`, CI job `flex-endpoint`). The
+  `doctrine` persistence driver is declared and refused at build time until the Doctrine bridge.
 
 ### Changed
 

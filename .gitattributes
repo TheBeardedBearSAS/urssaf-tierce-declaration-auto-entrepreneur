@@ -8,6 +8,9 @@
 # .github stays in the archive: OpenSSF Scorecard analyses the archive (workflows, pinned actions, Dependabot).
 /.php-cs-fixer.dist.php export-ignore
 /Makefile export-ignore
+# The Flex recipe is published in symfony/recipes-contrib (or a private endpoint built from a checkout), never read from the archive.
+/bin/build-flex-endpoint export-ignore
+/recipe export-ignore
 /bin/check-coverage export-ignore
 /bin/check-branch-coverage export-ignore
 /bin/check-dco export-ignore

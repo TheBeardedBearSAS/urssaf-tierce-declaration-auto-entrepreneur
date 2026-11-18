@@ -1,5 +1,7 @@
 # Without a framework
 
+With Symfony, use the bundle instead: see [symfony.md](symfony.md).
+
 `TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder` builds
 every use case of the package from a PSR-18 transport (`HttpTransport`), a `CredentialsProvider` and the
 `ApiConfiguration`; `build()` returns `Standalone\UrssafTierceDeclarationAutoEntrepreneur`, whose methods return the 27

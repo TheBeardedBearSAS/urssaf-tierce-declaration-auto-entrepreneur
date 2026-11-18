@@ -20,8 +20,8 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > process; the URSSAF documentation remains the authority on the API, and you remain responsible for the data your
 > application sends to URSSAF.
 
-> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator and the standalone builder are
-> implemented; the Doctrine and Symfony bridges follow [docs/roadmap.md](docs/roadmap.md).
+> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator, the standalone builder and the
+> Symfony bundle are implemented; the Doctrine bridge follows [docs/roadmap.md](docs/roadmap.md).
 
 ## Scope
 
@@ -81,9 +81,39 @@ the SEPA mandates, resolving an unknown outcome and the safety crons are covered
 [docs/standalone.md](docs/standalone.md) and [docs/workflow.md](docs/workflow.md). In tests,
 `Testing\SimulatedAeGateway` replaces the HTTP gateway and never contacts URSSAF.
 
+## Quick start (Symfony)
+
+With Symfony Flex the recipe registers the bundle, copies the configuration and adds the environment variables;
+otherwise register `TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Symfony\UrssafTierceDeclarationAutoEntrepreneurBundle`
+in `config/bundles.php` and create the file below. Every option is described in [docs/symfony.md](docs/symfony.md).
+
+```yaml
+# config/packages/urssaf_tierce_declaration_auto_entrepreneur.yaml
+urssaf_tierce_declaration_auto_entrepreneur:
+    environment: '%env(URSSAF_TDAE_ENV)%'      # sandbox | production
+    credentials:
+        default:
+            client_id: '%env(URSSAF_TDAE_CLIENT_ID)%'
+            client_secret: '%env(URSSAF_TDAE_CLIENT_SECRET)%'
+    # The Doctrine bridge is not released yet: "in_memory" loses every record at the end of the process, so give your
+    # own repositories with the "custom" driver for anything but tests.
+    persistence: { driver: in_memory }
+```
+
+Check the installation, track an account and declare a turnover (the commands never take a birth date, an IBAN or an
+amount as a plain argument: they come from a hidden prompt or a JSON file, all values here are fictitious):
+
+```bash
+php bin/console urssaf:tdae:check
+php bin/console urssaf:tdae:account:sync 73282932000074 --with-birth-date
+echo '{"period": {"year": 2026, "month": 10}, "turnover": {"sales": 1000}}' > declaration.json
+php bin/console urssaf:tdae:declare 73282932000074 --payload=declaration.json
+```
+
 ## Documentation
 
 - [docs/api-reference.md](docs/api-reference.md) — technical reference (single source of truth for the package).
+- [docs/symfony.md](docs/symfony.md) — Symfony bundle: Flex recipe, configuration, console commands, Messenger, Scheduler, locks.
 - [docs/standalone.md](docs/standalone.md) — wiring without a framework, scheduling, testing with the simulator.
 - [docs/workflow.md](docs/workflow.md) — lifecycles, re-entry and settlement tables, unknown outcomes, guards, erasure.
 - [docs/integration-events.md](docs/integration-events.md) — public integration events and the outbox.
