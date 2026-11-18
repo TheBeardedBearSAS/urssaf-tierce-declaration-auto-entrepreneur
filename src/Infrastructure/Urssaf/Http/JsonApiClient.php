@@ -25,6 +25,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Cloc
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Credentials;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\IdGenerator;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Operation;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\OperationRetryClass;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\RateLimiter;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\RateLimitExceeded;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\ApiErrors;
@@ -46,8 +47,9 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf
  * gateway with {@see \TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\UrssafGatewayFactory}.
  *
  * Per attempt: the tenant's rate limiter, bearer token, optional request-id header (a new id per attempt) and
- * optional application-id header. A 401 invalidates the cached token and the call is replayed exactly once, for every
- * operation (a 401 proves the call was not processed). The statuses are then mapped to the gateway exceptions; on an
+ * optional application-id header. A 401 invalidates the cached token and the call is replayed exactly once, except for an
+ * operation that is never resent ({@see OperationRetryClass::NeverResent}, 060 only, ADR 0003 amendment): the 401 is
+ * then mapped at once to an {@see UrssafAuthenticationFailed}, the host requeues the payment. The statuses are then mapped to the gateway exceptions; on an
  * operation that is not safe to retry (see {@see ApiConfiguration::isSafeToRetry()}) a transport error or any 5xx
  * becomes an {@see OutcomeUnknown}. A 429 stays a retryable {@see UrssafUnavailable} for every operation.
  *
@@ -80,12 +82,12 @@ final readonly class JsonApiClient
     ) {}
 
     /**
-     * Sends one call (plus one replay after a 401) and returns the raw 2xx answer; the caller decodes it.
+     * Sends one call (plus one replay after a 401, except for a never-resent operation) and returns the raw 2xx answer; the caller decodes it.
      *
      * @throws RateLimitExceeded          local limiter (before any HTTP call)
      * @throws UrssafRequestRejected      HTTP 400, 404 and 409 where they are definitive rejections, classified by
      *                                    {@see ErrorClassifier::classify()}
-     * @throws UrssafAuthenticationFailed 401 after the replay, 403; token 400 / 401 / 403
+     * @throws UrssafAuthenticationFailed 401 after the replay (at once on a never-resent operation), 403; token 400 / 401 / 403
      * @throws UrssafUnavailable          429; 500 / 502 / 503 / 504 and transport errors of operations safe to retry;
      *                                    token failures
      * @throws OutcomeUnknown             operations not safe to retry: transport error, any 5xx
@@ -97,6 +99,11 @@ final readonly class JsonApiClient
 
         if ($response->getStatusCode() === 401) {
             $this->tokenProvider->invalidate($credentials);
+
+            if ($request->operation()->retryClass() === OperationRetryClass::NeverResent) {
+                return $this->interpret($tenantId, $request->operation(), $response, $requestId);
+            }
+
             $this->logger->info('URSSAF call answered 401: token invalidated, replaying once.', [
                 'tenant' => $tenantId->value(),
                 'operation' => $request->operation()->value,

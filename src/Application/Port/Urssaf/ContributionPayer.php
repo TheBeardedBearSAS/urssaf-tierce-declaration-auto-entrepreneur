@@ -31,7 +31,7 @@ interface ContributionPayer
      *
      * @throws OutcomeUnknown             transport error, any 5xx, or a 2xx that cannot be read: never resent, not configurable
      * @throws UrssafRequestRejected      classified ({@see RejectionKind}) (400)
-     * @throws UrssafAuthenticationFailed token 400/401/403, 401 after one replay, 403
+     * @throws UrssafAuthenticationFailed token 400/401/403, 401 (never replayed on 060, ADR 0003), 403
      * @throws UrssafUnavailable          retryable: 429 or token failure only (the call did not reach URSSAF)
      * @throws RateLimitExceeded          the local limiter refused the call (nothing sent)
      * @throws RecordNotFound             "credentials.not_found": the tenant has no credentials (nothing sent)

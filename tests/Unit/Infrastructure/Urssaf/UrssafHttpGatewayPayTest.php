@@ -18,6 +18,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Oper
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\RateLimitExceeded;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\OutcomeUnknown;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\OutcomeUnknownCause;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\UrssafAuthenticationFailed;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\UrssafUnavailable;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Wire\JsonDecoder;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Wire\PaymentResponseMapper;
@@ -110,20 +111,22 @@ final class UrssafHttpGatewayPayTest extends TestCase
         }
     }
 
-    public function testA401IsReplayedOnce(): void
+    public function testA401IsNeverReplayedAndInvalidatesTheToken(): void
     {
         $stack = Gateways::warm();
         $stack->respond(401, '');
-        $stack->respondToken();
-        $stack->respond(200, Fixtures::load('pay_response'));
 
-        Gateways::gateway($stack)->payContributions(Stacks::tenant(), WireSamples::siret(), WireSamples::paymentOrder());
+        try {
+            Gateways::gateway($stack)->payContributions(Stacks::tenant(), WireSamples::siret(), WireSamples::paymentOrder());
+            static::fail('Expected an authentication failure.');
+        } catch (UrssafAuthenticationFailed $exception) {
+            static::assertSame(401, $exception->httpStatus());
+        }
 
         $paths = array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $stack->requests());
-        static::assertSame(
-            ['/api/oauth/v1/token', '/tiersdecl/v1/ae/payer', '/api/oauth/v1/token', '/tiersdecl/v1/ae/payer'],
-            $paths,
-        );
+        static::assertSame(['/api/oauth/v1/token', '/tiersdecl/v1/ae/payer'], $paths);
+        static::assertSame(['tenant-1:060'], $stack->rateLimiter->acquired());
+        static::assertSame([], $stack->tokens->keys());
     }
 
     public function testATokenFailureIsNeverAnUnknownOutcome(): void

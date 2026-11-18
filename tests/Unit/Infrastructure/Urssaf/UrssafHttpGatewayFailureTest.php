@@ -56,6 +56,22 @@ final class UrssafHttpGatewayFailureTest extends TestCase
     }
 
     /**
+     * The operations replayed once after a 401: every one but the never-resent 060.
+     *
+     * @return iterable<string, array{Operation}>
+     */
+    public static function provideReplayedOperations(): iterable
+    {
+        foreach (self::provideOperations() as $label => $case) {
+            if ($case[0]->retryClass() === OperationRetryClass::NeverResent) {
+                continue;
+            }
+
+            yield $label => $case;
+        }
+    }
+
+    /**
      * Every operation, with the five unspecified writes also declared safe to retry.
      *
      * @return iterable<string, array{Operation, ApiConfiguration, string}>
@@ -65,7 +81,7 @@ final class UrssafHttpGatewayFailureTest extends TestCase
         yield from RetryMatrix::columns();
     }
 
-    #[DataProvider('provideOperations')]
+    #[DataProvider('provideReplayedOperations')]
     public function test401ThenTheOfficialAnswerSucceedsAfterTheReplay(Operation $operation): void
     {
         $stack = Gateways::warm();
@@ -84,7 +100,7 @@ final class UrssafHttpGatewayFailureTest extends TestCase
         );
     }
 
-    #[DataProvider('provideOperations')]
+    #[DataProvider('provideReplayedOperations')]
     public function test401TwiceIsAnAuthenticationFailure(Operation $operation): void
     {
         $stack = Gateways::warm();
@@ -97,6 +113,19 @@ final class UrssafHttpGatewayFailureTest extends TestCase
         static::assertInstanceOf(UrssafAuthenticationFailed::class, $exception);
         static::assertSame(401, $exception->httpStatus());
         static::assertCount(4, $stack->requests());
+    }
+
+    public function testA401On060IsNotReplayed(): void
+    {
+        $stack = Gateways::warm();
+        $stack->respond(401, '');
+
+        $exception = $this->failure($stack, Operation::Pay);
+
+        static::assertInstanceOf(UrssafAuthenticationFailed::class, $exception);
+        static::assertSame(401, $exception->httpStatus());
+        static::assertCount(2, $stack->requests());
+        static::assertSame(['tenant-1:060'], $stack->rateLimiter->acquired());
     }
 
     #[DataProvider('provideOperations')]

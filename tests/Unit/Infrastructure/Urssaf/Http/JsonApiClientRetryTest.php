@@ -16,6 +16,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Operation;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\OperationRetryClass;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Urssaf\UrssafAuthenticationFailed;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\ApiConfiguration;
 use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Environment;
@@ -25,7 +26,7 @@ use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Infrastruc
 use Throwable;
 
 /**
- * The replay after a 401 (ADR 0002): once, for every operation.
+ * The replay after a 401 (ADR 0002): once, for every operation except the never-resent 060 (ADR 0003 amendment).
  */
 final class JsonApiClientRetryTest extends TestCase
 {
@@ -96,6 +97,10 @@ final class JsonApiClientRetryTest extends TestCase
     public static function provideEveryOperation(): iterable
     {
         foreach (Operation::cases() as $operation) {
+            if ($operation->retryClass() === OperationRetryClass::NeverResent) {
+                continue;
+            }
+
             yield $operation->value => [$operation];
         }
     }
@@ -114,6 +119,25 @@ final class JsonApiClientRetryTest extends TestCase
         static::assertSame(200, $response->status());
         static::assertCount(4, $stack->requests());
         static::assertSame([\sprintf('tenant-1:%s', $operation->value), \sprintf('tenant-1:%s', $operation->value)], $stack->rateLimiter->acquired());
+    }
+
+    public function testA401OnANeverResentOperationInvalidatesTheTokenButIsNotReplayed(): void
+    {
+        $stack = Stacks::sandbox();
+        $stack->respondToken();
+        $stack->respond(401, '');
+
+        try {
+            ClientCalls::send($stack, Operation::Pay);
+            static::fail('Expected an authentication failure.');
+        } catch (UrssafAuthenticationFailed $exception) {
+            static::assertSame(401, $exception->httpStatus());
+        }
+        // One token request and one API request: no replay.
+        static::assertCount(2, $stack->requests());
+        static::assertSame(1, $this->tokenRequests($stack));
+        static::assertSame(['tenant-1:060'], $stack->rateLimiter->acquired());
+        static::assertSame([], $stack->tokens->keys());
     }
 
     public function testASecond401FailsAuthenticationWithoutAThirdAttempt(): void

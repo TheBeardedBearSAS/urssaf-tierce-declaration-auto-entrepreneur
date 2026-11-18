@@ -44,9 +44,9 @@ and the unpublished behaviour once a period closes make an automatic resend a ho
 - 429 and a local rate-limit refusal ([ADR 0013](0013-quotas-and-rate-limit.md)) stay retryable on every class: the
   call provably did not reach the service. A token failure is never an unknown outcome (the API call was not sent).
 - The single replay after a 401 ([ADR 0002](0002-http-client-adaptations.md), reference behaviour) applies to every
-  class, 060 included: a 401 is an authentication refusal at the gateway, so the call was not processed. This
-  reading is inherited from the reference, not stated by the AE specification; the contract test checks it, and
-  any doubt is settled by amendment (removing the replay for `NeverResent`).
+  class except `NeverResent` (060), see the amendment of 2026-11-18 (after lot 8): a 401 is an authentication refusal
+  at the gateway, so the call was not processed, but this reading is inherited from the reference, not stated by the
+  AE specification, and is not trusted for a payment.
 - **Records** ([ADR 0009](0009-local-lifecycles.md) holds the states, transitions and settlement table):
   - `DeclarationRecord` and `PaymentRecord` move to `outcome_unknown` (reason `may_have_reached_urssaf`) on an
     `OutcomeUnknown`. With `050` listed, an uncertain failure of 050 (a `UrssafUnavailable` that
@@ -82,3 +82,16 @@ and the unpublished behaviour once a period closes make an automatic resend a ho
 - The single replay after a 401 on 060 is **not** exercised by the contract tests (a sandbox cannot be made to answer
   401 on demand). It stays the inherited reading of the reference and an open point of api-reference §5: if URSSAF
   shows that a 401 on 060 may follow a processed payment, the replay is removed for `NeverResent` by a new amendment.
+
+## Amendment (2026-11-18, lead-accepted, after lot 8)
+
+- The replay after a 401 is **removed for `NeverResent` operations** (060 `PayContributions` only). On a 401 the
+  client still invalidates the cached token, but it does not send the call again: it raises
+  `UrssafAuthenticationFailed` (401), the payment record is settled `invalid_credentials` and is requeued by the
+  operator / host (`RequeueAfterInvalidCredentials`) once the credentials are checked. The next attempt fetches a new
+  token. Every other operation keeps the single replay.
+- This supersedes the lot 8 amendment above (the replay on 060 as an inherited reading and an open point) and the
+  bullet of the decision that applied the replay to every class: a payment order is never sent twice by the package,
+  whatever the answer, since the "401 proves the call was not processed" reading is not published by URSSAF.
+- The `workflow.stale_submission_after` threshold (four times the HTTP timeout) is unchanged: it still covers the
+  other operations, which can replay.

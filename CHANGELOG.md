@@ -29,7 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `Mandate`, `DeclarationRecord` and `PaymentRecord` aggregates with their lifecycles.
 - Wire mappers for the nine operations (020 to 075), tolerant of the production response wrapper and of string periods,
   error payload parsing (object or list) and classification by code.
-- OAuth2 HTTP gateway (`UrssafHttpGateway`, `UrssafGatewayFactory`): token cache, one replay after a 401, payment
+- OAuth2 HTTP gateway (`UrssafHttpGateway`, `UrssafGatewayFactory`): token cache, one replay after a 401 (none for payment
+  orders), payment
   orders (060) never resent, other writes resent only when listed in `retrySafeWrites`, rate limit of 300 requests per
   minute per tenant, PSR-6 / PSR-16 token stores.
 - Public integration events (`urssaf.tdae.*`, `docs/integration-events.md`) written to an outbox in the same

@@ -52,7 +52,7 @@ The production contract (1.5.1) is ahead of the PDF and of the sandbox contract 
   estimate (040), turnover declaration (050), SEPA payment order (060), SEPA mandate registration (070), revocation (071)
   and listing (075).
 - OAuth2 client-credentials authentication with a pluggable access-token cache (PSR-6, PSR-16 or in memory); a single
-  replay after a 401, never after another failure.
+  replay after a 401 (never for the payment order 060), never after another failure.
 - Typed domain model: `Siret`, declaration periods as a sum type (monthly or quarterly), amounts in whole euros (no
   float anywhere), and the production (1.5.1) and sandbox (1.5.0) contracts tolerated by one model
   ([ADR 0006](docs/adr/0006-two-contracts-one-model.md), [ADR 0007](docs/adr/0007-whole-euros.md)).

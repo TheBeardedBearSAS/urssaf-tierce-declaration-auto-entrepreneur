@@ -585,8 +585,8 @@ payments of M1 to M4 possible, M6 second declaration; bank debit at the end of M
      record goes to `outcome_unknown` and an operator checks the AE space and records the result. The record is claimed
      before the call, keyed by a host-supplied `PaymentReference`, and a second payment of a period is refused unless the
      host opts in ([ADR 0011](adr/0011-guards-and-opt-outs.md)). 429 and a local rate-limit refusal provably did not reach the
-     service and stay retryable, honouring any `Retry-After`. The only replay is the one after a 401 (inherited from the
-     reference, ADR 0003; no contract test exercises it yet, see §5).
+     service and stay retryable, honouring any `Retry-After`. A 401 on 060 invalidates the token but is not
+     replayed: the payment is settled `invalid_credentials` and requeued by the host (ADR 0003, amendment after lot 8).
    - Mandate notification (030) is not idempotent (`SIRET_DEJA_MANDATE`); cancellation (031) and SEPA revocation (071) outcome on
      repetition not published: 030, 031, 070 and 071 follow the 050 rule (never resent unless listed in `retry_safe_writes`,
      ADR 0003). 020, 040, 075 and the token request are safe to retry.
@@ -641,9 +641,6 @@ there. Once a point is confirmed, update the SDK if needed and remove it from th
   ([ADR 0002](adr/0002-http-client-adaptations.md), note `sepa-075`); success status of 071 (204 or 200, both accepted).
 - **Retry safety of 030, 031, 050, 070, 071** (repetition not published, 050 last-wins unverified): never resent unless the
   host lists the operation ([ADR 0003](adr/0003-retry-and-unknown-outcome.md)).
-- **Replay after a 401 on 060**: inherited from the reference (a 401 is read as "not processed", ADR 0003). ADR 0003
-  expects the contract tests to check it, but no contract test exercises it yet; to confirm (test or URSSAF answer), or
-  remove the replay for 060 by amendment of ADR 0003.
 - Whether `ERR_PARAM_MULTIPLES`, `APPEL_INCONNU`, `PERIODICITE_INVALIDE`, `MDT_HORS_PERIODE` can occur on 060.
 - Official sandbox test data (SIRET, mandates, periods) not published: needed to run the contract tests.
 
