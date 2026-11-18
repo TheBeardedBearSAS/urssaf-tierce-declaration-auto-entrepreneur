@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Payment record: the order to debit a SEPA account for a payment reference (ADR 0009). The IBAN, the holder and the
+         address of the order are never stored (ADR 0010): the record keeps the amount, the RUM of the SEPA mandate used
+         and the fingerprint of the order. The optional result and the list of errors are JSON columns with explicit
+         serializers. "One current payment per (tenant, payment reference)" is the key table urssaf_tdae_current_payments
+         (CurrentPayment), written in the transaction of every save: there is no unique constraint here. "version" is
+         the optimistic lock token of the persistence layer. -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentRecord" table="urssaf_tdae_payment_records">
+        <indexes>
+            <index name="idx_urssaf_tdae_payment_siret" columns="tenant_id,siret,state"/>
+            <index name="idx_urssaf_tdae_payment_stale" columns="state,last_attempt_at"/>
+            <index name="idx_urssaf_tdae_payment_state" columns="tenant_id,state,updated_at"/>
+            <index name="idx_urssaf_tdae_payment_reference" columns="tenant_id,payment_reference"/>
+            <index name="idx_urssaf_tdae_payment_period" columns="tenant_id,siret,periodicity,period_year,period_number"/>
+        </indexes>
+        <id name="id" type="urssaf_tdae_payment_record_id" column="id" length="64">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="version" type="integer" version="true"/>
+        <field name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <field name="reference" type="urssaf_tdae_payment_reference" column="payment_reference" length="191"/>
+        <field name="siret" type="urssaf_tdae_siret" column="siret" length="14"/>
+        <field name="periodicity" type="string" column="periodicity" length="1" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Period\Periodicity"/>
+        <field name="periodYear" type="smallint" column="period_year"/>
+        <field name="periodNumber" type="smallint" column="period_number"/>
+        <field name="amount" type="urssaf_tdae_euros" column="montant"/>
+        <field name="rum" type="urssaf_tdae_rum" column="rum" length="35" nullable="true"/>
+        <field name="fingerprint" type="urssaf_tdae_payment_fingerprint" column="fingerprint" length="64"/>
+        <field name="accountId" type="urssaf_tdae_account_id" column="account_id" length="64" nullable="true"/>
+        <field name="supersedes" type="urssaf_tdae_payment_record_id" column="supersedes" length="64" nullable="true"/>
+        <field name="supersededBy" type="urssaf_tdae_payment_record_id" column="superseded_by" length="64" nullable="true"/>
+        <field name="createdAt" type="urssaf_tdae_instant" column="created_at"/>
+        <embedded name="status" class="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentStatus" use-column-prefix="false"/>
+    </entity>
+</doctrine-mapping>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Mandate of an auto-entrepreneur for a tenant (a SIRET may have several over time, one of them non-cancelled).
+         "One active mandate per (tenant, SIRET)" is the key table urssaf_tdae_active_mandates (ActiveMandate), written in
+         the transaction of every save: there is no unique constraint here. "version" is the optimistic lock token of the
+         persistence layer. -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\Mandate" table="urssaf_tdae_mandates">
+        <indexes>
+            <index name="idx_urssaf_tdae_mandate_siret" columns="tenant_id,siret,notified_at"/>
+            <index name="idx_urssaf_tdae_mandate_state" columns="tenant_id,state"/>
+        </indexes>
+        <id name="id" type="urssaf_tdae_mandate_id" column="id" length="64">
+            <generator strategy="NONE"/>
+        </id>
+        <field name="version" type="integer" version="true"/>
+        <field name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <field name="siret" type="urssaf_tdae_siret" column="siret" length="14"/>
+        <field name="accountId" type="urssaf_tdae_account_id" column="account_id" length="64" nullable="true"/>
+        <field name="origin" type="string" column="origin" length="16" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateOrigin"/>
+        <field name="state" type="string" column="state" length="16" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateState"/>
+        <field name="cancellationOrigin" type="string" column="cancellation_origin" length="16" nullable="true" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateCancellationOrigin"/>
+        <embedded name="timeline" class="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Mandate\MandateTimeline" use-column-prefix="false"/>
+    </entity>
+</doctrine-mapping>

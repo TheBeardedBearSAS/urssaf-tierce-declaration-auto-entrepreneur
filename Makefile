@@ -1,3 +1,9 @@
+# This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+#
+# Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+#
+# SPDX-License-Identifier: MIT
+
 # Every target runs inside Docker; no local PHP/Composer is required.
 #
 # Tooling notes:
@@ -12,8 +18,8 @@ SUITES := $(shell for s in Unit Functional; do [ -d tests/$$s ] && echo $$s; don
 UNIT_FUNCTIONAL := --testsuite=$(SUITES)
 
 .DEFAULT_GOAL := help
-.PHONY: help build install update shell test test-unit test-functional test-contract coverage coverage-paths \
-	bench infection phpstan mago cs cs-fix rector rector-fix deptrac composer-checks hadolint guard ci
+.PHONY: help build install update shell test test-unit test-functional test-contract coverage coverage-paths coverage-branches \
+	bench infection phpstan mago cs cs-fix rector rector-fix deptrac composer-checks hadolint guard flex-endpoint ci
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-16s %s\n", $$1, $$2}'
@@ -40,8 +46,15 @@ test-unit: ## Run unit tests
 test-functional: ## Run functional tests
 	$(PHP) vendor/bin/phpunit --testsuite=functional
 
-test-contract: ## Run live sandbox contract tests (needs URSSAF_SANDBOX_CLIENT_ID/SECRET)
-	docker compose run --rm -e URSSAF_SANDBOX_CLIENT_ID -e URSSAF_SANDBOX_CLIENT_SECRET -e URSSAF_SANDBOX_BASE_URI php vendor/bin/phpunit --testsuite=contract
+# Sandbox variables forwarded to the container. `-e NAME` without a value copies the shell value and leaves the variable
+# unset when the shell has none (so the live tests skip). No value is ever written here and no --env-file is read.
+CONTRACT_ENV := URSSAF_SANDBOX_CLIENT_ID URSSAF_SANDBOX_CLIENT_SECRET URSSAF_SANDBOX_BASE_URI URSSAF_SANDBOX_SIRET \
+	URSSAF_SANDBOX_BIRTH_DATE URSSAF_SANDBOX_WRITE
+
+test-contract: ## Live sandbox contract tests (skipped without URSSAF_SANDBOX_CLIENT_ID/SECRET); notes in var/contract
+	$(PHP) mkdir -p var/contract
+	$(PHP) rm -f var/contract/observations.log
+	docker compose run --rm $(addprefix -e ,$(CONTRACT_ENV)) php vendor/bin/phpunit --testsuite=contract
 
 coverage: ## Coverage (pcov): text + clover + html in var/coverage, enforce 100% lines/methods/classes
 	$(PHP) vendor/bin/phpunit $(UNIT_FUNCTIONAL) --coverage-text --coverage-clover var/coverage/clover.xml --coverage-html var/coverage/html --coverage-xml var/coverage/coverage-xml --log-junit var/coverage/junit.xml
@@ -50,6 +63,10 @@ coverage: ## Coverage (pcov): text + clover + html in var/coverage, enforce 100%
 coverage-paths: ## Path coverage report (Xdebug)
 	$(PHP_XDEBUG) php -d pcov.enabled=0 vendor/bin/phpunit $(UNIT_FUNCTIONAL) --path-coverage --coverage-html var/coverage/paths
 
+coverage-branches: ## Branch coverage (Xdebug, slow): Cobertura in var/coverage, enforce >= 96 % branches
+	$(PHP_XDEBUG) php -d pcov.enabled=0 vendor/bin/phpunit $(UNIT_FUNCTIONAL) --path-coverage --coverage-text --coverage-cobertura var/coverage/cobertura.xml
+	$(PHP) php bin/check-branch-coverage var/coverage/cobertura.xml 96
+
 bench: ## Benchmarks (PHPBench in tools/phpbench, out of the package dependencies); e.g. make bench ARGS="--tag=main"
 	$(PHP) composer install --no-progress --working-dir=tools/phpbench
 	$(PHP) tools/phpbench/vendor/bin/phpbench run --report=urssaf $(ARGS)
@@ -57,6 +74,7 @@ bench: ## Benchmarks (PHPBench in tools/phpbench, out of the package dependencie
 infection: ## Mutation testing (100% MSI); runs its own initial test pass (never --skip-initial-tests: false positives)
 	$(PHP) vendor/bin/infection --min-msi=100 --min-covered-msi=100 --threads=max --show-mutations --no-progress \
 		--test-framework-options="$(UNIT_FUNCTIONAL)"
+	@grep -q '^Skipped: 0$$' var/infection/summary.log || { echo 'Infection skipped mutants (time limit, see infection.json5)'; exit 1; }
 
 phpstan: ## PHPStan level max
 	$(PHP) vendor/bin/phpstan analyse --memory-limit=-1 --no-progress
@@ -91,9 +109,13 @@ hadolint: ## Lint the Dockerfiles (hadolint, .hadolint.yaml)
 	docker run --rm -v "$(CURDIR)":/repo:ro -w /repo hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d \
 		hadolint docker/php/Dockerfile
 
-guard: ## Fail if the forbidden word is found in the repository
+guard: ## Fail on the forbidden word or a missing SPDX licence header
 	@if grep -rIil --exclude-dir=vendor --exclude-dir=var --exclude-dir=.git 'extra''bat' . ; then \
 		echo "Forbidden word found (see files above)"; exit 1; \
 	fi
+	$(PHP) sh bin/check-spdx
+
+flex-endpoint: ## Build the Flex endpoint of the recipe in var/flex-endpoint
+	$(PHP) php bin/build-flex-endpoint var/flex-endpoint https://flex.invalid/urssaf-tdae
 
 ci: cs rector phpstan mago deptrac composer-checks hadolint guard coverage infection ## Full quality gate

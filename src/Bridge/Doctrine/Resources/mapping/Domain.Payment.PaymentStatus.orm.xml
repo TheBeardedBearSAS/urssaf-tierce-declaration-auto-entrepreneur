@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <embeddable name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentStatus">
+        <field name="state" type="string" column="state" length="32" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Payment\PaymentState"/>
+        <field name="attempts" type="integer" column="submission_attempts"/>
+        <field name="lastAttemptAt" type="urssaf_tdae_instant" column="last_attempt_at" nullable="true"/>
+        <field name="errors" type="urssaf_tdae_submission_errors" column="errors"/>
+        <field name="result" type="urssaf_tdae_payment_result" column="result" nullable="true"/>
+        <field name="outcomeUnknownReason" type="string" column="outcome_unknown_reason" length="32" nullable="true" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Submission\OutcomeUnknownReason"/>
+        <field name="updatedAt" type="urssaf_tdae_instant" column="updated_at"/>
+    </embeddable>
+</doctrine-mapping>

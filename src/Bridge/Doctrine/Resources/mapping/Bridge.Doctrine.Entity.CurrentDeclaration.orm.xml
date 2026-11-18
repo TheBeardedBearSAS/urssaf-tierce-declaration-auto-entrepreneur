@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Key table of the current declaration records (ADR 0009, ADR 0016): one row per record that no later record supersedes,
+         rewritten with DBAL by the declaration repository in the transaction of every save. Its primary key (tenant,
+         SIRET, periodicity, year, number) is the "one current declaration per period" constraint, portable to every
+         platform. The periodicity is the plain "M" or "T" of the period. -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\CurrentDeclaration" table="urssaf_tdae_current_declarations" read-only="true">
+        <unique-constraints>
+            <unique-constraint name="uniq_urssaf_tdae_current_declaration_id" columns="declaration_record_id"/>
+        </unique-constraints>
+        <id name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <id name="siret" type="urssaf_tdae_siret" column="siret" length="14"/>
+        <id name="periodicity" type="string" column="periodicity" length="1"/>
+        <id name="periodYear" type="smallint" column="period_year"/>
+        <id name="periodNumber" type="smallint" column="period_number"/>
+        <field name="declarationRecordId" type="urssaf_tdae_declaration_record_id" column="declaration_record_id" length="64"/>
+    </entity>
+</doctrine-mapping>

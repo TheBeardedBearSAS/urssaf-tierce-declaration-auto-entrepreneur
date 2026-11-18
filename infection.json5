@@ -20,7 +20,11 @@
     "mutators": {
         "@default": true
     },
-    "timeout": 30,
+    // Deviation from the reference (30 s): Infection *skips* (never runs) a mutant whose covering tests take longer than
+    // this limit in total. Widely used value objects are covered by the Doctrine and Symfony functional suites, so 30 s
+    // left 139 mutants untested while still reporting MSI 100 %. A higher limit makes the gate stricter, not weaker;
+    // `make infection` also fails when any mutant is skipped.
+    "timeout": 180,
     "minMsi": 100,
     "minCoveredMsi": 100
 }

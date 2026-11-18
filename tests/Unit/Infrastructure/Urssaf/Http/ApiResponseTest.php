@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+ *
+ * Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+namespace TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Tests\Unit\Infrastructure\Urssaf\Http;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Exception\UnexpectedUrssafResponse;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Http\ApiResponse;
+
+final class ApiResponseTest extends TestCase
+{
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function provideBodies(): iterable
+    {
+        yield 'empty' => ['', true];
+        yield 'blank' => ["  \n", true];
+        yield 'empty object' => ['{}', false];
+        yield 'list' => ['[]', false];
+        yield 'object' => ['{"a":1}', false];
+        yield 'garbage' => ['x', false];
+    }
+
+    #[DataProvider('provideBodies')]
+    public function testIsEmptyOnlyForABlankBody(string $body, bool $expected): void
+    {
+        static::assertSame($expected, (new ApiResponse(200, $body, null))->isEmpty());
+    }
+
+    public function testItExposesStatusAndRawBody(): void
+    {
+        $response = new ApiResponse(201, '{"a":1}', null);
+
+        static::assertSame(201, $response->status());
+        static::assertSame('{"a":1}', $response->body());
+        static::assertNull($response->requestId());
+    }
+
+    public function testItExposesTheRequestId(): void
+    {
+        static::assertSame('request-id-7', (new ApiResponse(200, '', 'request-id-7'))->requestId());
+    }
+
+    public function testAnEmptyOrBlankBodyIsAnEmptyPayload(): void
+    {
+        static::assertTrue((new ApiResponse(200, '{}', null))->payload()->isEmpty());
+        static::assertTrue((new ApiResponse(200, '', null))->payload()->isEmpty());
+    }
+
+    public function testPayloadIsDecodedFromTheBody(): void
+    {
+        $payload = (new ApiResponse(200, '{"a":"b"}', null))->payload();
+
+        static::assertFalse($payload->isEmpty());
+        static::assertSame('b', $payload->string('a'));
+    }
+
+    public function testAnInvalidBodyThrowsOnPayloadOnly(): void
+    {
+        $response = new ApiResponse(200, 'not json', null);
+
+        static::assertSame(200, $response->status());
+        $this->expectException(UnexpectedUrssafResponse::class);
+        $this->expectExceptionMessage('body is not valid JSON');
+        $response->payload();
+    }
+
+    public function testDebugInfoHidesTheBody(): void
+    {
+        static::assertSame(
+            ['status' => 200, 'body' => '***', 'requestId' => 'request-id-1'],
+            (new ApiResponse(200, '{"secret":"x"}', 'request-id-1'))->__debugInfo(),
+        );
+        static::assertSame(
+            ['status' => 200, 'body' => '', 'requestId' => null],
+            (new ApiResponse(200, '', null))->__debugInfo(),
+        );
+        static::assertStringNotContainsString('secret', print_r(new ApiResponse(200, '{"secret":"x"}', null), true));
+    }
+}

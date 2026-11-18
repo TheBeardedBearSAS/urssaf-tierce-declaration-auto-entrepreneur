@@ -1,0 +1,11 @@
+{
+    "bic": "ABCDEFGHIJK",
+    "iban": "FR7630001007941234567890185",
+    "account_holder": "Maxime LEFORESTIER",
+    "address": {
+        "first_line": "13 boulevard vauban",
+        "postal_code": "59000",
+        "city": "LILLE",
+        "country": "FRANCE"
+    }
+}

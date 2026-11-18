@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Key table of the current payment records (ADR 0009, ADR 0016): one row per record that no later record supersedes,
+         rewritten with DBAL by the payment repository in the transaction of every save. Its primary key (tenant, payment
+         reference) is the "one current payment per payment reference" constraint, portable to every platform. -->
+    <entity name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Bridge\Doctrine\Entity\CurrentPayment" table="urssaf_tdae_current_payments" read-only="true">
+        <unique-constraints>
+            <unique-constraint name="uniq_urssaf_tdae_current_payment_id" columns="payment_record_id"/>
+        </unique-constraints>
+        <id name="tenantId" type="urssaf_tdae_tenant_id" column="tenant_id" length="64"/>
+        <id name="paymentReference" type="urssaf_tdae_payment_reference" column="payment_reference" length="191"/>
+        <field name="paymentRecordId" type="urssaf_tdae_payment_record_id" column="payment_record_id" length="64"/>
+    </entity>
+</doctrine-mapping>

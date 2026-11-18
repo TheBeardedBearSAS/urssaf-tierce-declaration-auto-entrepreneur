@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+ *
+ * Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 use Rector\CodeQuality\Rector\ClassMethod\LocallyCalledStaticMethodToNonStaticRector;
 use Rector\Config\RectorConfig;
 
@@ -28,5 +36,15 @@ return RectorConfig::configure()
         \Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector::class,
         // Keep static:: (late static binding) in tests, as required by Mago assertion-style.
         \Rector\CodeQuality\Rector\Class_\ConvertStaticToSelfRector::class => ['tests'],
+        // Xdebug loses the branch coverage of a private method passed as a first-class callable (`$this->parse(...)`):
+        // `fn(X $x) => $this->parse($x)` is kept so that `make coverage-branches` sees the branches of the callee.
+        \Rector\CodingStyle\Rector\ArrowFunction\ArrowFunctionDelegatingCallToFirstClassCallableRector::class,
+        // Doctrine optimistic-lock token, read and written by the ORM through reflection: not a domain concept.
+        \Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector::class => [
+            __DIR__ . '/src/Domain/Account/AeAccount.php',
+            __DIR__ . '/src/Domain/Mandate/Mandate.php',
+            __DIR__ . '/src/Domain/Declaration/DeclarationRecord.php',
+            __DIR__ . '/src/Domain/Payment/PaymentRecord.php',
+        ],
     ])
     ->withImportNames(removeUnusedImports: true);

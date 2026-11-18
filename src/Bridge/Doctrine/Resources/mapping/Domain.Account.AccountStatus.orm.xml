@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur.
+
+  Copyright (c) TheBeardedBear and the urssaf-tierce-declaration-auto-entrepreneur contributors
+
+  SPDX-License-Identifier: MIT
+-->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <embeddable name="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\AccountStatus">
+        <field name="mandatePresent" type="boolean" column="mandate_present"/>
+        <field name="periodicity" type="string" column="periodicity" length="1" enum-type="TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Period\Periodicity"/>
+        <field name="affiliationDate" type="urssaf_tdae_calendar_date" column="affiliation_date" nullable="true"/>
+        <field name="acreExemption" type="boolean" column="acre_exemption" nullable="true"/>
+    </embeddable>
+</doctrine-mapping>
