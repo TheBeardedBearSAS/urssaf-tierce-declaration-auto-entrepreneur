@@ -150,3 +150,10 @@ Smaller adaptations of the application exceptions, following the reference `Doma
   parameter `last_code`: its violation code, or its class name when it has none.
 - `RetryableUrssafFailure` (reference) keeps the original retryable failure as its previous exception.
 - PAJE's base class, which takes a previous exception, is not adopted.
+
+## Amendment (2026-11-18, lead-accepted, lot 6)
+
+- Infection `timeout` is 180 s instead of the reference 30 s, and `make infection` fails when a mutant is *skipped*.
+  Infection never runs a mutant whose covering tests exceed the limit in total; with the Doctrine and Symfony
+  functional suites covering the shared value objects, 30 s left 139 mutants untested while MSI still read 100 %.
+  The change makes the gate stricter (justified in `infection.json5`).
