@@ -6,14 +6,25 @@ Doctrine bridges, 100 % coverage and MSI).
 
 ## Status
 
-Implemented: the domain, the wire mappers, the HTTP gateway, the use cases ([workflow.md](workflow.md)), the in-memory
-persistence, the outbox, the `Testing\SimulatedAeGateway` simulator, the standalone builder
-([standalone.md](standalone.md)) and the Symfony bundle ([symfony.md](symfony.md): configuration, `urssaf:tdae:*`
-commands, Messenger, Scheduler, locks, translations, Flex recipe) and the Doctrine bridge (lot 6,
-[doctrine.md](doctrine.md): mapping, repositories, outbox, statistics, `withDoctrine()`, the bundle's `doctrine`
-driver). The contract tests are written (`tests/Contract`); they still have to run against the sandbox.
+**The internal plan below is done** (lots 0 to 7, all committed on `feat/implementation`): the domain, the wire mappers, the
+HTTP gateway, the use cases ([workflow.md](workflow.md)), the in-memory persistence, the outbox, the
+`Testing\SimulatedAeGateway` simulator, the standalone builder ([standalone.md](standalone.md)), the Symfony bundle
+([symfony.md](symfony.md): configuration, `urssaf:tdae:*` commands, Messenger, Scheduler, locks, translations, Flex recipe),
+the Doctrine bridge ([doctrine.md](doctrine.md): mapping, repositories, outbox, statistics, `withDoctrine()`, the bundle's
+`doctrine` driver) and the live contract tests (`tests/Contract`, [testing.md](testing.md)). The sections below describe the
+design as planned and kept; where the code and a section differ, the code, the [ADRs](adr/README.md) and
+[api-reference.md](api-reference.md) prevail.
 
-## Already in place (skeleton)
+### What remains
+
+1. **Run the contract tests against the sandbox** (needs the DataPass subscription, sandbox credentials and test data): settle
+   or amend the open points of [api-reference.md](api-reference.md) §5 listed under "to be settled by the contract tests",
+   update the SDK and the ADRs where an answer differs from the tolerant default, and remove the settled points from §5.
+2. **Release**: first tag and publication on Packagist (the package is not released yet), the Flex recipe published in
+   `symfony/recipes-contrib`, the repository made public (badges and quality proofs in the README are active only then), and the
+   dated security review linked from [security/assurance-case.md](security/assurance-case.md).
+
+## Already in place (starting point)
 
 - `SpecVersion::CURRENT` (`1.5.0`, the version of the PDF; production Swagger is 1.5.1, see api-reference §2.10).
 - `Infrastructure\Urssaf\Environment` (Sandbox `https://api-edi.urssaf.fr` / Production `https://api.urssaf.fr`) and
@@ -80,9 +91,9 @@ done here.
 
 ## Order of work
 
-1. Domain value objects (`Siret`, `Euros`, `DeclarationPeriod`, amounts).
-2. Wire mappers + fixtures (both response shapes).
-3. HTTP gateway (OAuth2, errors, 429 handling).
-4. Application commands/queries (payment: no auto-retry).
-5. Symfony bridge (done), then Doctrine tracking (done).
-6. Contract tests (done: `tests/Contract`, `docs/testing.md`), then run them against the sandbox and remove the settled open points from `api-reference.md`.
+1. Domain value objects (`Siret`, `Euros`, `DeclarationPeriod`, amounts) — done.
+2. Wire mappers + fixtures (both response shapes) — done.
+3. HTTP gateway (OAuth2, errors, 429 handling) — done.
+4. Application commands/queries (payment: no auto-retry) — done.
+5. Symfony bridge, then Doctrine tracking — done.
+6. Contract tests (written: `tests/Contract`, `docs/testing.md`). Still to do: run them against the sandbox and remove the settled open points from `api-reference.md` (see *What remains*).

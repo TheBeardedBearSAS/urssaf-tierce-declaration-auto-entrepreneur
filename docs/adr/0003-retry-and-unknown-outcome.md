@@ -76,3 +76,9 @@ and the unpublished behaviour once a period closes make an automatic resend a ho
 - Some declarations and payments need a manual action; `GetWorkflowOverview` counts them under `needingAttention()`.
 - The retry safety of 030 / 031 / 050 / 070 / 071 stays an open point (api-reference §5) settled by configuration, not
   code.
+
+## Amendment (2026-11-18, lead-accepted, lot 8)
+
+- The single replay after a 401 on 060 is **not** exercised by the contract tests (a sandbox cannot be made to answer
+  401 on demand). It stays the inherited reading of the reference and an open point of api-reference §5: if URSSAF
+  shows that a 401 on 060 may follow a processed payment, the replay is removed for `NeverResent` by a new amendment.

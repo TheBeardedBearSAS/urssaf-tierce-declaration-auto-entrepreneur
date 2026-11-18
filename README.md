@@ -20,9 +20,13 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > process; the URSSAF documentation remains the authority on the API, and you remain responsible for the data your
 > application sends to URSSAF.
 
-> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator, the standalone builder, the
-> Symfony bundle, the Doctrine bridge and the live sandbox contract tests are implemented; the open points they settle
-> are listed in [docs/api-reference.md](docs/api-reference.md) §5.
+> [!NOTE]
+> **Status: implemented, not yet released.** The nine operations, the local workflows, the simulator, the standalone
+> builder, the Symfony bundle and the Doctrine bridge are implemented and covered by the quality gates (`make ci`). The
+> package is **not yet published on Packagist** and has no tagged version. The live sandbox contract tests are written but
+> have not been run against the URSSAF sandbox yet: until they have, the points of
+> [docs/api-reference.md](docs/api-reference.md) §5 that only the sandbox can settle (response shapes of production
+> and sandbox, optional fields, unpublished error codes) are handled by tolerant decoding, not confirmed.
 
 ## Scope
 
@@ -36,11 +40,54 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 | Register / revoke a SEPA mandate | `POST /sepa/mandats`, `DELETE /sepa/mandats/{siret}/{rum}` |
 | List the SEPA mandates of an account | `GET /sepa/mandats/rechercher` |
 
-OAuth2 client credentials, scope `tiersdecl.ae`, base URL `https://api.urssaf.fr/tiersdecl/v1/ae` (sandbox:
+The API uses OAuth2 client credentials, scope `tiersdecl.ae`, base URL `https://api.urssaf.fr/tiersdecl/v1/ae` (sandbox:
 `https://api-edi.urssaf.fr/tiersdecl/v1/ae`). Restricted API: subscription through DataPass.
 
 The production contract (1.5.1) is ahead of the PDF and of the sandbox contract (1.5.0); the differences are listed in
 [docs/api-reference.md](docs/api-reference.md) §2.10.
+
+## Features
+
+- The nine operations of the API: account lookup (020), mandate notification (030) and cancellation (031), contribution
+  estimate (040), turnover declaration (050), SEPA payment order (060), SEPA mandate registration (070), revocation (071)
+  and listing (075).
+- OAuth2 client-credentials authentication with a pluggable access-token cache (PSR-6, PSR-16 or in memory); a single
+  replay after a 401, never after another failure.
+- Typed domain model: `Siret`, declaration periods as a sum type (monthly or quarterly), amounts in whole euros (no
+  float anywhere), and the production (1.5.1) and sandbox (1.5.0) contracts tolerated by one model
+  ([ADR 0006](docs/adr/0006-two-contracts-one-model.md), [ADR 0007](docs/adr/0007-whole-euros.md)).
+- Local validation limited to the published bounds, reported as a list of violations with stable codes; local guards with
+  an opt-out for the rules the API does not publish ([ADR 0011](docs/adr/0011-guards-and-opt-outs.md)).
+- No duplicate side effect: a payment order (060) is claimed locally before the call and is never resent; any other write
+  whose effect is unspecified is resent only when you list it (`retry_safe_writes`); an ambiguous outcome is reported
+  as `outcome_unknown` and resolved by an operator ([ADR 0003](docs/adr/0003-retry-and-unknown-outcome.md)).
+- Local lifecycles of accounts, mandates, declarations and payments, reconciliation of stale submissions, requeue after
+  invalid credentials ([docs/workflow.md](docs/workflow.md)).
+- Multi-tenant: credentials resolved per tenant through a `CredentialsProvider`; in-process rate limiter for the quota of
+  300 requests per minute per API client, HTTP 429 reported with `Retry-After`.
+- Personal and bank data: IBAN, BIC, holder and address are never stored or logged; the birth date has its own
+  replaceable column type; account erasure (GDPR) ([ADR 0010](docs/adr/0010-personal-data.md),
+  [ADR 0017](docs/adr/0017-account-erasure.md)).
+- Integration events (`Contract\Event\*`, `urssaf.tdae.*`) written to an outbox in the transaction of each state change and
+  relayed at least once ([docs/integration-events.md](docs/integration-events.md)).
+- Symfony bundle: configuration, 20 `urssaf:tdae:*` console commands, Messenger account sync, Scheduler, locks,
+  diagnostics, translations (en, fr) and a Flex recipe; Doctrine bridge (ORM 3 / DBAL 4).
+- `Testing\SimulatedAeGateway`: a simulated URSSAF platform to test a host application without network.
+
+## Requirements
+
+PHP 8.2+ with `ext-filter`, `ext-json` and `ext-mbstring`; a PSR-18 HTTP client and PSR-17 factories. Optional (`suggest`):
+Symfony 6.4 / 7.x for the bundle, `doctrine/orm` and `doctrine/dbal` for the Doctrine bridge.
+
+## Installation
+
+```bash
+composer require thebeardedbear/urssaf-tierce-declaration-auto-entrepreneur
+```
+
+The package is not on Packagist yet: until its first release, declare the GitHub repository in the `repositories` of your
+`composer.json` (type `vcs`). With Symfony Flex, the recipe registers the bundle and adds the `URSSAF_TDAE_*` variables
+once it is published in `symfony/recipes-contrib`; otherwise follow *Quick start (Symfony)* below.
 
 ## Quick start (standalone)
 
@@ -131,16 +178,15 @@ BIC, holder or address is ever stored.
 - [docs/workflow.md](docs/workflow.md) — lifecycles, re-entry and settlement tables, unknown outcomes, guards, erasure.
 - [docs/integration-events.md](docs/integration-events.md) — public integration events and the outbox.
 - [docs/adr/](docs/adr/README.md) — architecture decision records (inherited architecture and its adaptations).
-- [docs/roadmap.md](docs/roadmap.md) — planned architecture and order of work.
+- [docs/security/assurance-case.md](docs/security/assurance-case.md) — security assurance case (threat model, countermeasures, residual risks).
+- [docs/roadmap.md](docs/roadmap.md) — implementation plan (done) and what remains before the release.
 - [docs/openapi/](docs/openapi/) — official OpenAPI contracts (production and sandbox) from the URSSAF API portal.
 - `docs/reference/` — official URSSAF documentation: not versioned (URSSAF documents), download it from the links in [docs/api-reference.md](docs/api-reference.md) into this local, git-ignored folder.
 - Catalogue page: https://portailapi.urssaf.fr/fr/catalogue-api/prd/td-ae
 
-## Requirements
-
-PHP 8.2+. Development only needs Docker: every `make` target runs in a container.
-
 ## Development
+
+Development only needs Docker: every `make` target runs in a container.
 
 ```sh
 make install     # build the image, install dependencies

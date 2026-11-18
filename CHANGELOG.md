@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Live sandbox contract tests (`make test-contract`, `tests/Contract`, manual CI job) and `docs/testing.md`.
+- Live sandbox contract tests (`make test-contract`, `tests/Contract`, manual CI job `contract`): read-only and opt-in write
+  suites that record non-failing observations for the open points of `docs/api-reference.md` §5, and `docs/testing.md`.
 - Project skeleton: Docker tooling, quality gates (`make ci`) and GitHub Actions CI, identical to the other URSSAF
   packages.
 - Specification: official OpenAPI contracts (`docs/openapi/`), official documentation (links in `docs/api-reference.md`, local copy in the git-ignored `docs/reference/`), technical
@@ -22,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Open-source (silver) tooling and documents: Developer Certificate of Origin sign-off (`bin/check-dco`, CI job `dco`),
   SPDX licence headers (`bin/check-spdx`, part of `make guard`), branch coverage of at least 96 %
   (`make coverage-branches`), `GOVERNANCE.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md` and the security assurance case
-  (`docs/security/assurance-case.md`, in progress).
+  (`docs/security/assurance-case.md`).
 - Domain model: `Siret`, `DeclarationPeriod` (monthly or quarterly), `Euros` (whole euros), turnover and contribution
   amounts (union of the production 1.5.1 and sandbox 1.5.0 contracts), SEPA mandate value objects, and the `AeAccount`,
   `Mandate`, `DeclarationRecord` and `PaymentRecord` aggregates with their lifecycles.
@@ -33,14 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   minute per tenant, PSR-6 / PSR-16 token stores.
 - Public integration events (`urssaf.tdae.*`, `docs/integration-events.md`) written to an outbox in the same
   transaction as the state change and relayed at least once; in-memory repositories.
-- Use cases: account tracking and sync, mandate notification / cancellation / import, estimate, turnover declaration,
-  payment order (claimed before the call, never resent), SEPA mandate registration / revocation / listing, reconciliation
-  and manual resolution of unknown outcomes, requeue after invalid credentials, account erasure (GDPR), workflow
-  overview (`docs/workflow.md`).
-- `Testing\SimulatedAeGateway` and the standalone builder and facade (`docs/standalone.md`).
-- Symfony bundle `UrssafTierceDeclarationAutoEntrepreneurBundle` (`docs/symfony.md`): configuration with build-time
-  rules, `urssaf:tdae:*` console commands (personal data through hidden prompts or payload files only), Messenger
-  account sync, locks, scheduler, outbox sink, diagnostics, translations (en, fr) and a Flex recipe.
 - Use cases, simulator, standalone: the commands and queries for accounts, mandates, declarations, payments, SEPA
   mandates, erasure and the outbox (`docs/workflow.md`), the `Testing\SimulatedAeGateway` in-memory platform for the tests
   of a host application, and the framework-free `Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder`
@@ -49,8 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   container wiring of the HTTP gateway, the use cases, the outbox and the lock; the 20 `urssaf:tdae:*` console commands
   (personal data only through hidden prompts and payload files); Messenger handlers for the account sync only; a
   Scheduler schedule of the safety crons; `urssaf:tdae:check`; en / fr translations of the violation codes; a
-  `ViolationListConverter`; the Flex recipe (`recipe/`, `bin/build-flex-endpoint`, CI job `flex-endpoint`). The
-  `doctrine` persistence driver is declared and refused at build time until the Doctrine bridge.
+  `ViolationListConverter`; the Flex recipe (`recipe/`, `bin/build-flex-endpoint`, CI job `flex-endpoint`).
 - Doctrine bridge (`Bridge\Doctrine`, ADR 0016, [docs/doctrine.md](docs/doctrine.md)): XML mapping, 17 `urssaf_tdae_*`
   DBAL types (SIRET, RUM, birth date, results and errors with masked conversion errors), repositories with optimistic
   locking, key tables for the one active mandate per SIRET, the one current declaration per period and the one current
@@ -61,6 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Infection: the per-mutant time limit is 180 s instead of 30 s, and `make infection` and the CI job fail on any skipped
+  mutant (a skipped mutant was not tested yet still counted for a 100 % MSI).
 - The stale submission rule counts the replay after a 401: `workflow.stale_submission_after` must be longer than four
   times `http_timeout` (a token call and the API call, twice), instead of twice (ADR 0015 amendment, lot 6).
 - Flex recipe: no active persistence line (the default driver is `doctrine` when `doctrine/orm` is installed) and a hint

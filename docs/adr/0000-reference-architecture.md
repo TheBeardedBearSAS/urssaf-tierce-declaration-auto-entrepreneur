@@ -157,3 +157,8 @@ Smaller adaptations of the application exceptions, following the reference `Doma
   Infection never runs a mutant whose covering tests exceed the limit in total; with the Doctrine and Symfony
   functional suites covering the shared value objects, 30 s left 139 mutants untested while MSI still read 100 %.
   The change makes the gate stricter (justified in `infection.json5`).
+
+## Amendment (2026-11-18, lead-accepted, lot 8)
+
+- Item 1: `deptrac.yaml` now declares every layer of the reference (Contract added in lot 4a, Testing and Standalone in
+  lot 4b, the bridges in lots 5 and 6).

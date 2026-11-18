@@ -5,12 +5,12 @@ commitment; it is reviewed at each minor release. Proposals are welcome in GitHu
 
 ## Planned
 
-- **Complete the API coverage.** Implement the nine operations of the URSSAF *API Tierce Déclaration
-  auto-entrepreneur* (account lookup, notification and cancellation of the third-party declaration mandate, contribution
-  estimate, turnover declaration, SEPA payment order, registration, revocation and listing of SEPA mandates), with a
-  framework-free core, a Symfony bundle and a Doctrine integration. The package is currently a skeleton: see the
-  [README](README.md).
-- **Release 1.0.** Validate the behaviour against the URSSAF sandbox, stabilise the public API, then release `1.0.0`.
+- **Validate against the URSSAF sandbox.** The nine operations of the URSSAF *API Tierce Déclaration auto-entrepreneur*
+  are implemented (framework-free core, Symfony bundle, Doctrine integration, simulator), but the package has not been
+  released and the live contract tests (`make test-contract`) have not run against the sandbox yet. Run them, settle the
+  open points they are meant to settle (the response shapes of production and sandbox, optional fields, unpublished
+  error codes, see [docs/api-reference.md](docs/api-reference.md) §5), and adapt the package where an answer differs.
+- **Release 1.0.** Publish the first release on Packagist, stabilise the public API, then release `1.0.0`.
   From 1.0 on, breaking changes only happen in major versions, as required by [Semantic Versioning](https://semver.org/).
 - **Follow the URSSAF API.** Track each new version of the URSSAF swagger and technical documentation (the production
   contract 1.5.1 is ahead of the sandbox contract 1.5.0) and release the matching changes, with upgrade notes in the
@@ -24,7 +24,8 @@ commitment; it is reviewed at each minor release. Proposals are welcome in GitHu
 ## Not planned
 
 - Other URSSAF APIs: each one gets its own package (see *Other URSSAF packages* in the [README](README.md)).
-- A shared library extracted from the sibling third-party declaration packages (CESU, PAJE).
+- A shared library extracted from the sibling third-party declaration packages (CESU, PAJE): the three share the
+  `/tiersdecl/v1` path and the mandate model, but each package stays self-contained.
 - Official bridges for other frameworks than Symfony: the core works without a framework.
 - Features the URSSAF API does not offer: a status endpoint, idempotency keys or a reconciliation lookup. The package
   never resends a payment order (`POST /payer`) on its own.

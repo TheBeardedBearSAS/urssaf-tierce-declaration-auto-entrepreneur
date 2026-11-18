@@ -27,8 +27,8 @@ advisory is published with credit to the reporter unless you ask otherwise.
 ## Security design and review
 
 - [Assurance case](docs/security/assurance-case.md): security requirements, threat model, trust boundaries, secure
-  design principles and the countermeasures against common implementation weaknesses (in progress while the package is
-  being implemented).
+  design principles and the countermeasures against common implementation weaknesses, with the files that implement them
+  (complete; no independent security review has been performed yet).
 
 ## Verifying a release
 

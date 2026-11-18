@@ -19,7 +19,9 @@ Field names, codes and wire values below are reproduced verbatim from the specif
 everything else in the package is English. Statements marked *inferred from the example* are not specified, and
 "not published" means neither the contract nor the PDF says anything.
 
-> Status: specification only. Nothing below is implemented yet; see [roadmap.md](roadmap.md).
+> Status: implemented (not yet released); the live sandbox contract tests ([testing.md](testing.md)) still have to run, see §5.
+> §1 to §3 summarise the official specification; §4 records the decisions taken by the package, each linked to its
+> architecture decision record ([adr/](adr/README.md)); §5 lists what stays open. Implementation plan: [roadmap.md](roadmap.md).
 
 > **Source and rights.** The specification, the field names, the codes and the official JSON examples quoted here come
 > from the URSSAF documents listed above and remain URSSAF's property. They are reproduced only so the package can
@@ -551,44 +553,56 @@ payments of M1 to M4 possible, M6 second declaration; bank debit at the end of M
 ## 4. Package decisions derived from the specification
 
 1. **Account identification.** The package always sends `siret` (14 digits), never `nir` (deprecated); `nir` support is not
-   offered, so `ERR_PARAM_MULTIPLES` cannot occur on the AE operations. For 070 the SIRET goes in the body.
-2. **Two contracts, one model.** TBD, proposed: the models are the union of prd 1.5.1 and sb 1.5.0: the five `*VL` amounts are
+   offered, so `ERR_PARAM_MULTIPLES` cannot occur on the AE operations. For 070 the SIRET goes in the body. Decided in
+   [ADR 0008](adr/0008-siret-and-account-reference.md): no SIRET checksum (none is published), the birth date is checked by URSSAF only.
+2. **Two contracts, one model.** Decided in [ADR 0006](adr/0006-two-contracts-one-model.md): the models are the union of prd 1.5.1 and sb 1.5.0: the five `*VL` amounts are
    optional (absent in the sandbox), `OutputEstimation.montants`/`periode` are treated as required (PDF + sandbox) with a
-   clear error when absent, `Compte.date_etat` and `exoAccrePresent` are optional (PDF only). `SpecVersion` stays `1.5.0`.
-3. **Wrapper tolerance.** TBD, proposed: the 200 mappers of 040/050/060 accept both the direct object (PDF, sandbox) and the
+   clear error when absent, `Compte.date_etat` and `exoAccrePresent` are optional (PDF only); an absent optional field is `null`, never `0`. Unknown response fields
+   are ignored. `SpecVersion` stays `1.5.0`.
+3. **Wrapper tolerance.** Decided in [ADR 0006](adr/0006-two-contracts-one-model.md): the 200 mappers of 040/050/060 accept both the direct object (PDF, sandbox) and the
    wrapper (`OutputEstimations` / `OutputDeclarations` / `OutputTelepaiements`, production Swagger), detected by the presence
-   of the wrapper key; the contract test against the sandbox, then production smoke tests, settle which one is real (§5).
-4. **Money.** Amounts are whole euros (`number`/`int32`, no cents, §1.2). TBD, proposed: a `Euros` value object over `int`
+   of the wrapper key (a wrapper that is `null`, not an object or empty is an unreadable answer); the contract test against the sandbox, then production smoke tests, settle which one is real (§5).
+4. **Money.** Amounts are whole euros (`number`/`int32`, no cents, §1.2). Decided in [ADR 0007](adr/0007-whole-euros.md): a `Euros` value object over `int`
    (never `float`); the mapper rejects non-integral JSON numbers and accepts integral floats (`1678.0`). Negative values
-   (`montantRegulAcre`, `montantDeduction` may deduct) are allowed on output only. The package does not recompute
-   contributions or rounding (done server-side); `montantDue()` helper = `montantTotal + montantRegulAcre + montantDeduction`
-   (PDF) is TBD pending the Swagger/PDF contradiction on `montantTotal` (§5).
-5. **Periods.** TBD, proposed: `DeclarationPeriod` sum type `MonthlyPeriod(year, month 1-12)` | `QuarterlyPeriod(year, quarter
+   (`montantRegulAcre`, `montantDeduction` may deduct) are allowed on output only; inputs (turnover lines, 060 `montant`)
+   must not be negative. The package does not recompute contributions or rounding (done server-side). There is **no
+   `montantDue()` helper**: `montantTotal + montantRegulAcre + montantDeduction` (PDF) is not offered while the
+   Swagger/PDF contradiction on `montantTotal` is open (§5); the host chooses the amount it passes to 060.
+5. **Periods.** Decided in [ADR 0004](adr/0004-sum-types.md) and [ADR 0006](adr/0006-two-contracts-one-model.md): `DeclarationPeriod` sum type `MonthlyPeriod(year, month 1-12)` | `QuarterlyPeriod(year, quarter
    1-4)` making the "not both" rule unrepresentable; `Periodicity` enum `M`/`T`. Serialised as **integers** (per contract);
-   the mapper reads both ints and numeric strings (PDF examples). Whether the API accepts integers as well as strings must be
-   confirmed on the sandbox. Declaring a period whose kind differs from the account periodicity is rejected locally only
-   after `GET /comptes` has been called; otherwise the server answers `PERIODICITE_INVALIDE`.
+   the mapper reads both ints and numeric strings (PDF examples). Whether the API accepts integers as well as strings is to be
+   confirmed by the contract tests (`period-encoding`). Declaring a period whose kind differs from the account periodicity is
+   rejected locally only after `GET /comptes` has been read (guard with an opt-out, [ADR 0011](adr/0011-guards-and-opt-outs.md));
+   otherwise the server answers `PERIODICITE_INVALIDE`.
 6. **Idempotency.**
    - *Declaration (050)* converges on an open period (last wins; `certificat` stable, `idDeclaration` changes), but every
      call e-mails the AE: **decided in [ADR 0003](adr/0003-retry-and-unknown-outcome.md)**, 050 is never resent by
-     default (`outcome_unknown`), resend only when the host lists it in `retry_safe_writes`.
-   - *Payment (060)* has **no published idempotency mechanism** (no key header, no duplicate-detection error): TBD, proposed:
-     never auto-retry `POST /payer` after a timeout / 5xx / connection error; surface an "outcome unknown" exception, and let
-     the caller reconcile (e.g. by the returned `certificat`/`idTelepaiement` or on the AE account). Doctrine tracking
-     (roadmap) records payment attempts before the call. 429 before processing may be retried honouring any `Retry-After`.
+     default (`outcome_unknown`), resend only when the host lists it in `retry_safe_writes`. The last-wins behaviour is to be
+     confirmed by the contract tests before a host lists it.
+   - *Payment (060)* has **no published idempotency mechanism** (no key header, no duplicate-detection error): decided in
+     [ADR 0003](adr/0003-retry-and-unknown-outcome.md) and [ADR 0009](adr/0009-local-lifecycles.md): `POST /payer` is never resent
+     after a timeout / 5xx / connection error, and this is not configurable; the package raises `OutcomeUnknown`, the payment
+     record goes to `outcome_unknown` and an operator checks the AE space and records the result. The record is claimed
+     before the call, keyed by a host-supplied `PaymentReference`, and a second payment of a period is refused unless the
+     host opts in ([ADR 0011](adr/0011-guards-and-opt-outs.md)). 429 and a local rate-limit refusal provably did not reach the
+     service and stay retryable, honouring any `Retry-After`. The only replay is the one after a 401 (inherited from the
+     reference, ADR 0003; no contract test exercises it yet, see §5).
    - Mandate notification (030) is not idempotent (`SIRET_DEJA_MANDATE`); cancellation (031) and SEPA revocation (071) outcome on
-     repetition not published; GET and estimate are safe to retry.
-7. **Dates.** `dateNaissance` / `dateEffet` serialised `yyyy-MM-dd`; `dateExigibilite` parsed as ISO date; `date_etat`
+     repetition not published: 030, 031, 070 and 071 follow the 050 rule (never resent unless listed in `retry_safe_writes`,
+     ADR 0003). 020, 040, 075 and the token request are safe to retry.
+7. **Dates.** Decided in [ADR 0001](adr/0001-date-only-encoding.md): `dateNaissance` / `dateEffet` serialised `yyyy-MM-dd`; `dateExigibilite` parsed as ISO date; `date_etat`
    parsed as `DD/MM/YYYY`; all as calendar dates (`Europe/Paris` for "today + 1" checks), not instants.
-8. **Identifiers are opaque strings.** `certificat` (`^\d{8}$` kept as string, leading zeros), `idDeclaration`, `idTelepaiement`
+8. **Identifiers are opaque strings** ([ADR 0011](adr/0011-guards-and-opt-outs.md) item 5). `certificat` (`^\d{8}$` kept as string, leading zeros), `idDeclaration`, `idTelepaiement`
    (max 23), `rum` (max 35), `ics`. Local validation limited to the published lengths/patterns.
-9. **Error mapping.** One exception hierarchy keyed on the business `code` (§3.4) with the raw code preserved for unknown values;
+9. **Error mapping.** Decided in [ADR 0005](adr/0005-error-classification.md) and [ADR 0002](adr/0002-http-client-adaptations.md): one exception hierarchy keyed on the business `code` (§3.4) with the raw code preserved for unknown values;
    the parser accepts an object or a list of `{code, message, description}`; 401/403/429/500 without body map to dedicated
    exceptions by HTTP status. 409 maps to "SEPA mandate already exists".
-10. **SEPA mandate requirement for payment.** TBD: `pay()` takes `iban` and/or `rum` as the contract allows; the package
-    prefers `rum` of a registered mandate and does not add checks the API does not document.
-11. **Personal and bank data.** `nir`, `dateNaissance`, `iban`, `bic`, `titulaireCompte` and addresses are personal data: never
-    logged (mask the IBAN); SIRET is not secret but is kept out of log context by default.
+10. **SEPA mandate requirement for payment.** Decided in [ADR 0011](adr/0011-guards-and-opt-outs.md): `iban` and `rum` are both
+    optional and no combination rule or length is enforced locally (none is published); the package never requires a
+    registered SEPA mandate before 060. The rule actually applied by URSSAF is to be settled by the contract tests (`pay-060-*`).
+11. **Personal and bank data.** Decided in [ADR 0010](adr/0010-personal-data.md): `nir`, `dateNaissance`, `iban`, `bic`, `titulaireCompte` and addresses are personal data: never
+    logged; `nir` is never handled and the IBAN, BIC, holder and address are never stored (the IBAN is masked in dumps); the
+    SIRET is not secret but is kept out of log context by default (`log_siret`).
 12. **Rate limiting.** Decided in [ADR 0013](adr/0013-quotas-and-rate-limit.md): HTTP 429 surfaces a typed exception exposing
     `Retry-After` when present; an in-process sliding window (300 requests/minute per tenant) is provided, on by default in
     the standalone factory and opt-in in the Symfony bundle (not enforceable across processes).
@@ -597,26 +611,69 @@ payments of M1 to M4 possible, M6 second declaration; bank debit at the end of M
 
 ## 5. Open points
 
+The package is implemented; each point below is either **open** (the specification does not say, and the package
+does not guess), **handled by a decision** (the package behaves safely whatever the answer, ADR linked, the answer
+itself is still unknown) or **settled by a decision** (no further information needed). "Contract tests" are the live
+sandbox tests ([testing.md](testing.md)): they have not run yet, and each point they are meant to settle has a note
+there. Once a point is confirmed, update the SDK if needed and remove it from this list.
+
+### Open, to be settled by the contract tests
+
 - **Production (1.5.1) vs sandbox (1.5.0) gap** (§2.10): extra `*VL` amounts, wrapper response types, `required` on
-  `OutputEstimation`, tags. PDF is at 1.5.0 and has no 1.5.1 entry. To confirm: does production return wrapped objects
-  (`{"OutputDeclaration": {...}}`) or direct objects? Are the `*VL` amounts returned in production only for AE with the
-  *versement libératoire* option? Is the sandbox going to be upgraded? `SpecVersion` follows the PDF (1.5.0).
-- **Swagger vs PDF**: `Compte.date_etat` and `exoAccrePresent` documented in the PDF only; PDF `InputEstimation.date` (deprecated)
-  absent from the Swagger; `montantTotal` meaning (§2.4) contradictory; PDF prints `DELETE /sepa/mandats` without path params;
-  PDF `addresse1/2` vs Swagger `adresse1/2`; PDF examples send `annee`/`trimestre`/`mois` as strings while the Swagger says integer;
-  PDF error examples for 040/050 still mention a `date` parameter; SEPA errors are lists in the Swagger and single objects in the PDF.
-- Sandbox token endpoint host (the sandbox Swagger declares the production `tokenUrl`); sandbox base URL is taken from the
-  Swagger host and may need confirming at onboarding.
-- Quota details (per-operation limits, `Retry-After`, headers) not published; 429 absent from the Swagger.
-- `nir` format and length (13 on AE operations, 13 to 15 on SEPA); `bic`/`iban`/`codePostal` patterns not published.
-- Which of `siret` / `nir` is mandatory in the body of 070 (both optional in the schema).
-- Rule combining `iban` and `rum` in `InputTelepaiement` (both optional); whether payment requires a SEPA mandate, and its relation
-  to the declared amount / `idDeclaration`; behaviour on duplicate payment; min/max `montant`.
-- Business error codes not published: birth-date mismatch (030/031), "no mandate to cancel" (031), unknown RUM or invalid
-  `dateEffet` (071), SEPA 404 (070/071/075); default `dateEffet` when omitted.
-- Behaviour of 075 when the account has no mandate (empty list or 404).
+  `OutputEstimation`, tags. PDF is at 1.5.0 and has no 1.5.1 entry. Does production return wrapped objects
+  (`{"OutputDeclaration": {...}}`) or direct objects (the sandbox note `response-shape` shows the sandbox side; production
+  needs a smoke test)? Are the `*VL` amounts returned in production only for AE with the *versement libératoire* option?
+  Is the sandbox going to be upgraded? Handled by [ADR 0006](adr/0006-two-contracts-one-model.md) (both shapes decoded);
+  `SpecVersion` follows the PDF (1.5.0).
+- **Sandbox token endpoint host** (the sandbox Swagger declares the production `tokenUrl`) and sandbox base URL, to confirm at
+  onboarding: the token URL is derived from the base URI of the environment ([ADR 0002](adr/0002-http-client-adaptations.md)).
+- **Period encoding on input**: integers are sent (per contract, the PDF examples use strings); that URSSAF accepts
+  integers is to be confirmed (note `period-encoding`, [ADR 0006](adr/0006-two-contracts-one-model.md)).
+- **`Compte.date_etat` and `exoAccrePresent`** (PDF only): whether 020 returns them (note `compte-pdf-only-fields`); both
+  optional in the model ([ADR 0006](adr/0006-two-contracts-one-model.md)).
+- **`iban` / `rum` on 060** (both optional): the rule URSSAF applies, whether payment requires a SEPA mandate, its relation to
+  the declared amount / `idDeclaration`, behaviour on duplicate payment, min/max `montant` (notes `pay-060-*`). The package
+  adds no check ([ADR 0011](adr/0011-guards-and-opt-outs.md)) and never resends 060 ([ADR 0003](adr/0003-retry-and-unknown-outcome.md)).
+- **Business error codes not published**: birth-date mismatch (030/031), "no mandate to cancel" (031), unknown RUM or invalid
+  `dateEffet` (071), SEPA 404 (070/071/075); default `dateEffet` when omitted. An unknown code is kept raw and classified
+  `unknown` ([ADR 0005](adr/0005-error-classification.md)); the contract tests fail on a code missing from `ApiErrorCode`.
+- **Behaviour of 075** when the account has no mandate (empty list or 404); the package does not turn a 404 into an empty list
+  ([ADR 0002](adr/0002-http-client-adaptations.md), note `sepa-075`); success status of 071 (204 or 200, both accepted).
+- **Retry safety of 030, 031, 050, 070, 071** (repetition not published, 050 last-wins unverified): never resent unless the
+  host lists the operation ([ADR 0003](adr/0003-retry-and-unknown-outcome.md)).
+- **Replay after a 401 on 060**: inherited from the reference (a 401 is read as "not processed", ADR 0003). ADR 0003
+  expects the contract tests to check it, but no contract test exercises it yet; to confirm (test or URSSAF answer), or
+  remove the replay for 060 by amendment of ADR 0003.
 - Whether `ERR_PARAM_MULTIPLES`, `APPEL_INCONNU`, `PERIODICITE_INVALIDE`, `MDT_HORS_PERIODE` can occur on 060.
-- Official sandbox test data (SIRET, mandates, periods) not published.
-- Cardinality / ranges of `Periode` (`trimestre` 1-4, `mois` 1-12, mutual exclusion) stated in prose only, not machine-readable.
-- `Creancier.nom` / `ics` format (examples only).
-- CESU, PAJE and AE share `/tiersdecl/v1` and the mandate model: a shared library is possible later, out of scope here.
+- Official sandbox test data (SIRET, mandates, periods) not published: needed to run the contract tests.
+
+### Not published, handled by a decision
+
+- **`montantTotal` meaning** (§2.4): the Swagger and the PDF contradict each other. The package exposes every amount raw and
+  offers no `montantDue()` helper ([ADR 0007](adr/0007-whole-euros.md)); the host chooses the amount to pay.
+- **Quota details** (per-operation limits, `Retry-After`, headers) not published; 429 absent from the Swagger. Client-side
+  limiter of 300 requests/minute per tenant and a typed 429 exception ([ADR 0013](adr/0013-quotas-and-rate-limit.md)); the per-API
+  level cannot be enforced locally.
+- **`bic` / `iban` / `codePostal` patterns, SIRET and `nir` checksums, `Creancier.nom` / `ics` format**: not published, so
+  not checked locally (only the published lengths, [ADR 0011](adr/0011-guards-and-opt-outs.md), [ADR 0008](adr/0008-siret-and-account-reference.md)); URSSAF checks them.
+- **Rules applied only by the server** (open period, mandate validity window, first-declaration schedule, birth-date match,
+  single platform per SIRET, IBAN checksum and bank referentials, duplicate SEPA mandate): not checked locally
+  ([ADR 0011](adr/0011-guards-and-opt-outs.md) item 6).
+- **Time of the revocation date** (071, minimum today + 1): checked in the business time zone with an opt-out
+  ([ADR 0001](adr/0001-date-only-encoding.md), [ADR 0011](adr/0011-guards-and-opt-outs.md)).
+
+### Settled by a decision
+
+- **Swagger vs PDF**: PDF `InputEstimation.date` (deprecated) is not sent (040 sends `ca` only); PDF error examples for 040/050 still mention a `date`
+  parameter (ignored); PDF `addresse1/2` vs Swagger `adresse1/2`: the Swagger spelling is used on the wire; PDF prints
+  `DELETE /sepa/mandats` without path params: the request is `DELETE /sepa/mandats/{siret}/{rum}` with `dateEffet` in the
+  query ([ADR 0002](adr/0002-http-client-adaptations.md)); SEPA errors are lists in the Swagger and single objects in the PDF:
+  both are parsed ([ADR 0005](adr/0005-error-classification.md)); PDF examples send `annee`/`trimestre`/`mois` as strings while the
+  Swagger says integer: both are read, integers are written ([ADR 0006](adr/0006-two-contracts-one-model.md)).
+- **`nir`**: never sent or read ([ADR 0008](adr/0008-siret-and-account-reference.md)); the SIRET is always in the body of 070, so the
+  "siret or nir" question is moot there.
+- **Cardinality / ranges of `Periode`** (prose only): `mois` 1-12, `trimestre` 1-4, `annee` 1-9999, never both
+  ([ADR 0004](adr/0004-sum-types.md)).
+- **Nature of 060 duplicates**: the package cannot tell an intended second payment from a duplicate; it refuses a second
+  payment of a period unless the host opts in ([ADR 0011](adr/0011-guards-and-opt-outs.md), [ADR 0009](adr/0009-local-lifecycles.md)).
+- **Shared library** with CESU and PAJE (same `/tiersdecl/v1` path and mandate model): out of scope, see [ROADMAP.md](../ROADMAP.md).
