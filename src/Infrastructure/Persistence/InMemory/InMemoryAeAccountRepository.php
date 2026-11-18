@@ -53,7 +53,7 @@ final class InMemoryAeAccountRepository implements AeAccountRepository
      */
     public function all(): array
     {
-        return Selection::of($this->accounts)->copies($this->adopt(...));
+        return Selection::of($this->accounts)->copies(fn(AeAccount $copy): AeAccount => $this->adopt($copy));
     }
 
     /**
@@ -88,7 +88,7 @@ final class InMemoryAeAccountRepository implements AeAccountRepository
                 static fn(AeAccount $account): bool => $account->tenantId()->equals($tenantId)
                     && $account->siret()->equals($siret),
             )
-            ->copies($this->adopt(...))[0] ?? null;
+            ->copies(fn(AeAccount $copy): AeAccount => $this->adopt($copy))[0] ?? null;
     }
 
     #[Override]
@@ -101,7 +101,7 @@ final class InMemoryAeAccountRepository implements AeAccountRepository
                 static fn(AeAccount $account): string => $account->id()->value(),
             ))
             ->limit($limit)
-            ->copies($this->adopt(...));
+            ->copies(fn(AeAccount $copy): AeAccount => $this->adopt($copy));
     }
 
     #[Override]

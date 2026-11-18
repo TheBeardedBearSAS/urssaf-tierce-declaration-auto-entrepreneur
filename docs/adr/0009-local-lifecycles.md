@@ -108,3 +108,29 @@ carrying `certificat` and `idDeclaration` / `idTelepaiement`, recovered with `Re
 - **Namespaces.** `TenantId` lives in `Domain\Tenant` (ADR 0012); `SubmissionError` and `OutcomeUnknownReason` in
   `Domain\Submission` (shared by declarations and payments). There is no `ExternalReference`: the only host reference
   is `Payment\PaymentReference`, which carries the reference rules (non-blank, at most 191 characters).
+
+## Amendment (2026-11-18, lead-accepted, lot 4b)
+
+- **Settlement of failures that are not URSSAF answers.**
+  - Only the `RecordNotFound` `credentials.not_found`, which the ports document as "nothing sent"
+    (`ContributionPayer` / `TurnoverDeclarer`), is a local refusal: the record goes to `error`, then to `pending` or
+    `exhausted`, and the exception is rethrown unchanged.
+  - Every other throwable is the "unknown / unexpected" column: the record goes to `outcome_unknown`, and the exception
+    is rethrown. This covers any other `DomainException`, `UnexpectedUrssafResponse`, a retryable exception other than
+    `UrssafUnavailable` / `RateLimitExceeded`, and a foreign throwable.
+  - The HTTP gateway already wraps every failure after sending (mapping errors included, `guard()` →
+    `OutcomeUnknown`). A foreign gateway may not, so no other `DomainException` is assumed to be raised before sending:
+    060 is never requeued on a doubt.
+  - `UrssafUnavailable` with `mayHaveReachedUrssaf()` on 060 is `outcome_unknown` (never resent). On 050 it is the
+    "retryable, may have reached" column: the HTTP gateway raises it only when `050` is listed in `retry_safe_writes`.
+- **Retryable outcome.** A record moved back to `pending` makes `DeclareTurnover` / `PayContributions` throw
+  `RetryableUrssafFailure` after the commit (reference). Its previous exception is the original failure, with its
+  delay. An `exhausted` record is returned (`ItemOutcome::Exhausted`).
+- **Birth date of 030 / 031.** The birth date of the command, else the one stored on the tracked `AeAccount`. Without
+  either, the call is refused before sending with `ValidationFailed` (`account_reference.birth_date_required`, path
+  `birthDate`).
+  - `ImportMandate` also takes an optional birth date, stored on the tracked account (ADR 0015 item 6 prompts for it on
+    `mandate:import`).
+  - A given birth date is stored on the tracked account in the recording transaction. It is never stored without a
+    tracked account.
+- **`RecordMandateCancellation`** never throws `MandateRecordingFailed`, because no call was made. Only 030 / 031 do.

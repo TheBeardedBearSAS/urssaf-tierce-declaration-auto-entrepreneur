@@ -71,7 +71,7 @@ final class InMemoryPaymentRecordRepository implements PaymentRecordRepository
      */
     public function all(): array
     {
-        return Selection::of($this->records)->copies($this->adopt(...));
+        return Selection::of($this->records)->copies(fn(PaymentRecord $copy): PaymentRecord => $this->adopt($copy));
     }
 
     /**
@@ -107,7 +107,7 @@ final class InMemoryPaymentRecordRepository implements PaymentRecordRepository
                     && $record->tenantId()->equals($tenantId)
                     && $record->reference()->equals($reference),
             )
-            ->copies($this->adopt(...))[0] ?? null;
+            ->copies(fn(PaymentRecord $copy): PaymentRecord => $this->adopt($copy))[0] ?? null;
     }
 
     #[Override]
@@ -128,7 +128,7 @@ final class InMemoryPaymentRecordRepository implements PaymentRecordRepository
                 ),
                 static fn(PaymentRecord $record): string => $record->id()->value(),
             ))
-            ->copies($this->adopt(...));
+            ->copies(fn(PaymentRecord $copy): PaymentRecord => $this->adopt($copy));
     }
 
     #[Override]
@@ -147,7 +147,7 @@ final class InMemoryPaymentRecordRepository implements PaymentRecordRepository
                 static fn(PaymentRecord $record): string => $record->id()->value(),
             ))
             ->limit($limit)
-            ->copies($this->adopt(...));
+            ->copies(fn(PaymentRecord $copy): PaymentRecord => $this->adopt($copy));
     }
 
     #[Override]
@@ -166,7 +166,7 @@ final class InMemoryPaymentRecordRepository implements PaymentRecordRepository
                 static fn(PaymentRecord $record): string => $record->id()->value(),
             ))
             ->limit($limit)
-            ->copies($this->adopt(...));
+            ->copies(fn(PaymentRecord $copy): PaymentRecord => $this->adopt($copy));
     }
 
     #[Override]

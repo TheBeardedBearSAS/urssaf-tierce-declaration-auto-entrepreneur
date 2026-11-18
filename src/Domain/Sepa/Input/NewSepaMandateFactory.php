@@ -38,7 +38,7 @@ final readonly class NewSepaMandateFactory
      */
     public function validate(#[SensitiveParameter] array $input): ValidationResult
     {
-        return RawFields::validate($input, $this->parse(...));
+        return RawFields::validate($input, fn(RawFields $fields): ?NewSepaMandate => $this->parse($fields));
     }
 
     /**
@@ -48,7 +48,7 @@ final readonly class NewSepaMandateFactory
      */
     public function fromInput(#[SensitiveParameter] array $input): NewSepaMandate
     {
-        return RawFields::resolve($input, $this->parse(...));
+        return RawFields::resolve($input, fn(RawFields $fields): ?NewSepaMandate => $this->parse($fields));
     }
 
     private function parse(RawFields $fields): ?NewSepaMandate
@@ -56,7 +56,7 @@ final readonly class NewSepaMandateFactory
         $bic = $fields->required('bic', Bic::fromString(...));
         $iban = $fields->required('iban', Iban::forSepaMandate(...));
         $holder = $fields->required('account_holder', AccountHolder::fromString(...));
-        $address = $fields->nested('address', $this->parseAddress(...));
+        $address = $fields->nested('address', fn(RawFields $addressFields): ?SepaMandateAddress => $this->parseAddress($addressFields));
 
         return $bic instanceof Bic && $iban instanceof Iban && $holder instanceof AccountHolder && $address instanceof SepaMandateAddress
             ? NewSepaMandate::of($bic, $iban, $holder, $address)

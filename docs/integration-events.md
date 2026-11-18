@@ -56,7 +56,7 @@ Notes:
   auto-entrepreneur or URSSAF): the local `Mandate` is not moved, record the cancellation if you track it.
 - No event exists for 040 / 075 (no state change), local refusals, retryable failures, requeues, records left in
   `error` or `invalid_credentials`, nor a resolution as not received: list those records with
-  `FindDeclarations::inState()` / `FindPayments::inState()`.
+  `FindDeclarations::inState()` / `FindPayments::inState()` (see [workflow.md](workflow.md#monitoring)).
 
 ### Erasure
 

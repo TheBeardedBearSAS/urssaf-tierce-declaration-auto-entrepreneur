@@ -141,3 +141,12 @@ Smaller adaptations of the application layer, each overriding the reference (pre
   reference has neither.
 - The in-memory repositories track versions per instance (`VersionTokens`), because the AE aggregates expose no
   version accessor (ADR 0016 item 6).
+
+## Amendment (2026-11-18, lead-accepted, lot 4b)
+
+Smaller adaptations of the application exceptions, following the reference `DomainException` (no previous exception):
+
+- `MandateRecordingFailed`, `DeclarationRecordingFailed` and `PaymentRecordingFailed` carry the last failure as the
+  parameter `last_code`: its violation code, or its class name when it has none.
+- `RetryableUrssafFailure` (reference) keeps the original retryable failure as its previous exception.
+- PAJE's base class, which takes a previous exception, is not adopted.

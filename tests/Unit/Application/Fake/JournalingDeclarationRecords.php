@@ -75,6 +75,8 @@ final class JournalingDeclarationRecords implements DeclarationRecordRepository
      * Runs $intrusion once, just before the next save reaches the store: another process writing in between.
      *
      * @param Closure(InMemoryDeclarationRecordRepository): void $intrusion
+     *
+     * @param-immediately-invoked-callable $intrusion
      */
     public function beforeNextSave(Closure $intrusion): void
     {

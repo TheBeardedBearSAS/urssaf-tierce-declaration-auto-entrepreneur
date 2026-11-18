@@ -70,7 +70,7 @@ final class InMemoryDeclarationRecordRepository implements DeclarationRecordRepo
      */
     public function all(): array
     {
-        return Selection::of($this->records)->copies($this->adopt(...));
+        return Selection::of($this->records)->copies(fn(DeclarationRecord $copy): DeclarationRecord => $this->adopt($copy));
     }
 
     /**
@@ -107,7 +107,7 @@ final class InMemoryDeclarationRecordRepository implements DeclarationRecordRepo
                     && $record->siret()->equals($siret)
                     && $record->period()->equals($period),
             )
-            ->copies($this->adopt(...))[0] ?? null;
+            ->copies(fn(DeclarationRecord $copy): DeclarationRecord => $this->adopt($copy))[0] ?? null;
     }
 
     #[Override]
@@ -126,7 +126,7 @@ final class InMemoryDeclarationRecordRepository implements DeclarationRecordRepo
                 static fn(DeclarationRecord $record): string => $record->id()->value(),
             ))
             ->limit($limit)
-            ->copies($this->adopt(...));
+            ->copies(fn(DeclarationRecord $copy): DeclarationRecord => $this->adopt($copy));
     }
 
     #[Override]
@@ -145,7 +145,7 @@ final class InMemoryDeclarationRecordRepository implements DeclarationRecordRepo
                 static fn(DeclarationRecord $record): string => $record->id()->value(),
             ))
             ->limit($limit)
-            ->copies($this->adopt(...));
+            ->copies(fn(DeclarationRecord $copy): DeclarationRecord => $this->adopt($copy));
     }
 
     #[Override]

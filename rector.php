@@ -36,6 +36,9 @@ return RectorConfig::configure()
         \Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector::class,
         // Keep static:: (late static binding) in tests, as required by Mago assertion-style.
         \Rector\CodeQuality\Rector\Class_\ConvertStaticToSelfRector::class => ['tests'],
+        // Xdebug loses the branch coverage of a private method passed as a first-class callable (`$this->parse(...)`):
+        // `fn(X $x) => $this->parse($x)` is kept so that `make coverage-branches` sees the branches of the callee.
+        \Rector\CodingStyle\Rector\ArrowFunction\ArrowFunctionDelegatingCallToFirstClassCallableRector::class,
         // Doctrine optimistic-lock token, read and written by the ORM through reflection: not a domain concept.
         \Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector::class => [
             __DIR__ . '/src/Domain/Account/AeAccount.php',

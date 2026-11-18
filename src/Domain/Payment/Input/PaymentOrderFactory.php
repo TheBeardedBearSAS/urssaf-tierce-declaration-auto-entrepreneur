@@ -37,7 +37,7 @@ final readonly class PaymentOrderFactory
      */
     public function validate(#[SensitiveParameter] array $input): ValidationResult
     {
-        return RawFields::validate($input, $this->parse(...));
+        return RawFields::validate($input, fn(RawFields $fields): ?PaymentOrder => $this->parse($fields));
     }
 
     /**
@@ -47,7 +47,7 @@ final readonly class PaymentOrderFactory
      */
     public function fromInput(#[SensitiveParameter] array $input): PaymentOrder
     {
-        return RawFields::resolve($input, $this->parse(...));
+        return RawFields::resolve($input, fn(RawFields $fields): ?PaymentOrder => $this->parse($fields));
     }
 
     private function parse(RawFields $fields): ?PaymentOrder

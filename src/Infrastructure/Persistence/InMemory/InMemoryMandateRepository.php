@@ -53,7 +53,7 @@ final class InMemoryMandateRepository implements MandateRepository
      */
     public function all(): array
     {
-        return Selection::of($this->mandates)->copies($this->adopt(...));
+        return Selection::of($this->mandates)->copies(fn(Mandate $copy): Mandate => $this->adopt($copy));
     }
 
     /**
@@ -89,7 +89,7 @@ final class InMemoryMandateRepository implements MandateRepository
                     && $mandate->tenantId()->equals($tenantId)
                     && $mandate->siret()->equals($siret),
             )
-            ->copies($this->adopt(...))[0] ?? null;
+            ->copies(fn(Mandate $copy): Mandate => $this->adopt($copy))[0] ?? null;
     }
 
     #[Override]
@@ -104,7 +104,7 @@ final class InMemoryMandateRepository implements MandateRepository
                 static fn(Mandate $a, Mandate $b): int => Selection::compareInstants($a->notifiedAt(), $b->notifiedAt()),
                 static fn(Mandate $mandate): string => $mandate->id()->value(),
             ))
-            ->copies($this->adopt(...));
+            ->copies(fn(Mandate $copy): Mandate => $this->adopt($copy));
     }
 
     #[Override]

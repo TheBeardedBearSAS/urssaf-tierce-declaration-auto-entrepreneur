@@ -34,7 +34,7 @@ final readonly class SepaRevocationFactory
      */
     public function validate(#[SensitiveParameter] array $input): ValidationResult
     {
-        return RawFields::validate($input, $this->parse(...));
+        return RawFields::validate($input, fn(RawFields $fields): ?SepaRevocation => $this->parse($fields));
     }
 
     /**
@@ -44,7 +44,7 @@ final readonly class SepaRevocationFactory
      */
     public function fromInput(#[SensitiveParameter] array $input): SepaRevocation
     {
-        return RawFields::resolve($input, $this->parse(...));
+        return RawFields::resolve($input, fn(RawFields $fields): ?SepaRevocation => $this->parse($fields));
     }
 
     private function parse(RawFields $fields): ?SepaRevocation

@@ -37,7 +37,7 @@ final readonly class TurnoverDeclarationFactory
      */
     public function validate(#[SensitiveParameter] array $input): ValidationResult
     {
-        return RawFields::validate($input, $this->parse(...));
+        return RawFields::validate($input, fn(RawFields $fields): ?TurnoverDeclaration => $this->parse($fields));
     }
 
     /**
@@ -47,7 +47,7 @@ final readonly class TurnoverDeclarationFactory
      */
     public function fromInput(#[SensitiveParameter] array $input): TurnoverDeclaration
     {
-        return RawFields::resolve($input, $this->parse(...));
+        return RawFields::resolve($input, fn(RawFields $fields): ?TurnoverDeclaration => $this->parse($fields));
     }
 
     private function parse(RawFields $fields): ?TurnoverDeclaration

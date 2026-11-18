@@ -55,3 +55,12 @@ unknown must not be forgotten silently, since 060 is never resent and its record
 - A 050 or 060 accepted after its record was erased cannot be recorded: the use case reports it (recording failure of
   ADR 0009) with the `certificat`, so that the host can reconcile.
 - Backups are the host's: erasure from backups is outside the package.
+
+## Amendment (2026-11-18, lead-accepted, lot 4b)
+
+- **Item 1: layout.** The use case is `Application\Command\ForgetAccount` with `ForgetAccountHandler`, the reference
+  layout. There is no `Application\UseCase` namespace.
+- `AccountSelector` and `AccountErasure` live in `Application\Dto`. `AccountErasureRefused` lives in
+  `Application\Exception`.
+- `AccountErasureRefused` has the parameter `account_id` only when an account is tracked, and `count`: violation
+  parameters are scalar, so a null cannot be passed.

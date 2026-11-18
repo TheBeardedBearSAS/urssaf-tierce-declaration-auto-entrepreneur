@@ -20,8 +20,8 @@ Developed and maintained by [The Bearded Bear](https://the-bearded-bear.com).
 > process; the URSSAF documentation remains the authority on the API, and you remain responsible for the data your
 > application sends to URSSAF.
 
-> 🚧 **Skeleton — not implemented yet.** This repository currently contains the tooling and the specification only.
-> The implementation follows [docs/roadmap.md](docs/roadmap.md).
+> 🚧 **Work in progress.** The domain, the HTTP gateway, the use cases, the simulator and the standalone builder are
+> implemented; the Doctrine and Symfony bridges follow [docs/roadmap.md](docs/roadmap.md).
 
 ## Scope
 
@@ -41,9 +41,52 @@ OAuth2 client credentials, scope `tiersdecl.ae`, base URL `https://api.urssaf.fr
 The production contract (1.5.1) is ahead of the PDF and of the sandbox contract (1.5.0); the differences are listed in
 [docs/api-reference.md](docs/api-reference.md) §2.10.
 
+## Quick start (standalone)
+
+Without a framework, the builder wires every use case from a PSR-18 client, PSR-17 factories and your credentials.
+Persistence is in memory by default (tests and prototypes); [docs/standalone.md](docs/standalone.md) lists the options and
+[docs/workflow.md](docs/workflow.md) explains the lifecycles. All values below are fictitious.
+
+```php
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Command\NotifyMandate;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Application\Port\Credentials;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Account\Siret;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Shared\CalendarDate;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Domain\Tenant\TenantId;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Credentials\InMemoryCredentialsProvider;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\ApiConfiguration;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\Environment;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Infrastructure\Urssaf\HttpTransport;
+use TheBeardedBear\UrssafTierceDeclarationAutoEntrepreneur\Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder;
+
+// $httpClient is your PSR-18 client, $psr17Factory a PSR-17 request and stream factory.
+$urssaf = UrssafTierceDeclarationAutoEntrepreneurBuilder::create(
+    new HttpTransport($httpClient, $psr17Factory, $psr17Factory),
+    new InMemoryCredentialsProvider(['tenant-1' => Credentials::of('my-client-id', 'my-client-secret')]),
+    ApiConfiguration::forEnvironment(Environment::Sandbox),
+)->build();
+
+$tenant = TenantId::fromString('tenant-1');
+$siret = Siret::fromString('73282932000074');
+$birthDate = CalendarDate::fromString('1975-02-23');
+
+// Notify the mandate the auto-entrepreneur gave to your platform (030) and record it locally.
+$mandate = $urssaf->notifyMandate()(new NotifyMandate($tenant, $siret, $birthDate));
+
+$state = $mandate->state; // "notified"
+```
+
+Estimating contributions (`estimateContributions()`), declaring turnover (`declareTurnover()`), paying (`payContributions()`),
+the SEPA mandates, resolving an unknown outcome and the safety crons are covered in
+[docs/standalone.md](docs/standalone.md) and [docs/workflow.md](docs/workflow.md). In tests,
+`Testing\SimulatedAeGateway` replaces the HTTP gateway and never contacts URSSAF.
+
 ## Documentation
 
 - [docs/api-reference.md](docs/api-reference.md) — technical reference (single source of truth for the package).
+- [docs/standalone.md](docs/standalone.md) — wiring without a framework, scheduling, testing with the simulator.
+- [docs/workflow.md](docs/workflow.md) — lifecycles, re-entry and settlement tables, unknown outcomes, guards, erasure.
+- [docs/integration-events.md](docs/integration-events.md) — public integration events and the outbox.
 - [docs/adr/](docs/adr/README.md) — architecture decision records (inherited architecture and its adaptations).
 - [docs/roadmap.md](docs/roadmap.md) — planned architecture and order of work.
 - [docs/openapi/](docs/openapi/) — official OpenAPI contracts (production and sandbox) from the URSSAF API portal.

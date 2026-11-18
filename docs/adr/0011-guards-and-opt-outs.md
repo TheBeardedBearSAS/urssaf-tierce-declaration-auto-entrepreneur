@@ -77,3 +77,17 @@ Unlike PAJE (whose 020 says nothing about the mandate), AE 020 returns `mandatPr
   `ApiConfiguration` lives in Infrastructure, and Deptrac forbids Application to Infrastructure. Both are fed from the
   same bundle key `business_timezone` (default `Europe/Paris`), so there is one setting and two readers (reference and
   PAJE shape).
+
+## Amendment (2026-11-18, lead-accepted, lot 4b)
+
+- **Guard order on the paths that send.**
+  - `DeclareTurnover`: the periodicity guard, then the mandate guard.
+  - `PayContributions`: the second-payment guard (new reference only), then the mandate guard.
+  - `EstimateContributions`: the mandate guard only.
+- The second-payment guard does not run when a rejected record of the same reference is superseded: that path is the
+  re-entry table of ADR 0009.
+- A payment reference stays bound to its SIRET and period. `PaymentRecord::supersede()` keeps the SIRET of the
+  rejected record and the period of the new order, so re-sending a rejected reference with another SIRET or another
+  period is refused with `PaymentAlreadyRecorded`, with no call. Only the amount, the RUM and the IBAN may change
+  (typically after `invalid_bank_details`). This keeps the guard exemption safe: the superseding record stays on the
+  same period.

@@ -76,6 +76,8 @@ final class JournalingPaymentRecords implements PaymentRecordRepository
      * Runs $intrusion once, just before the next save reaches the store: another process writing in between.
      *
      * @param Closure(InMemoryPaymentRecordRepository): void $intrusion
+     *
+     * @param-immediately-invoked-callable $intrusion
      */
     public function beforeNextSave(Closure $intrusion): void
     {

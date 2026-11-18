@@ -17,6 +17,9 @@ assertion-style = { style = "static" }
 # Wire DTOs mirror URSSAF payloads (up to 12 fields); regular methods stay at 5 parameters max.
 # Conflicts with ergebnis.noNamedArgument (PHPStan), which wins: positional arguments only.
 literal-named-argument = { enabled = false }
+# Xdebug loses the branch coverage of a private method passed as a first-class callable (`$this->parse(...)`): the
+# forwarding closures are kept so that `make coverage-branches` sees the branches of the callee.
+prefer-first-class-callable = { enabled = false }
 excessive-parameter-list = { threshold = 5, constructor-threshold = 12 }
 
 [analyzer]

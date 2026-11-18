@@ -32,6 +32,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   minute per tenant, PSR-6 / PSR-16 token stores.
 - Public integration events (`urssaf.tdae.*`, `docs/integration-events.md`) written to an outbox in the same
   transaction as the state change and relayed at least once; in-memory repositories.
+- Use cases: account tracking and sync, mandate notification / cancellation / import, estimate, turnover declaration,
+  payment order (claimed before the call, never resent), SEPA mandate registration / revocation / listing, reconciliation
+  and manual resolution of unknown outcomes, requeue after invalid credentials, account erasure (GDPR), workflow
+  overview (`docs/workflow.md`).
+- `Testing\SimulatedAeGateway` and the standalone builder and facade (`docs/standalone.md`).
+- Use cases, simulator, standalone: the commands and queries for accounts, mandates, declarations, payments, SEPA
+  mandates, erasure and the outbox (`docs/workflow.md`), the `Testing\SimulatedAeGateway` in-memory platform for the tests
+  of a host application, and the framework-free `Standalone\UrssafTierceDeclarationAutoEntrepreneurBuilder`
+  (`docs/standalone.md`). Deptrac layers `Testing` and `Standalone`.
 
 ### Changed
 

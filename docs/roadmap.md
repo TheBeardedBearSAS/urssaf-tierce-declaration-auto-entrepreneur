@@ -4,6 +4,13 @@ Specification: [api-reference.md](api-reference.md). Architecture, conventions a
 `thebeardedbear/urssaf-tiers-prestations` (hexagonal layers enforced by Deptrac, PSR-only runtime, Symfony and
 Doctrine bridges, 100 % coverage and MSI).
 
+## Status
+
+Implemented: the domain, the wire mappers, the HTTP gateway, the use cases ([workflow.md](workflow.md)), the in-memory
+persistence, the outbox, the `Testing\SimulatedAeGateway` simulator and the standalone builder
+([standalone.md](standalone.md)). Still to come: the Doctrine bridge (lot 6) and the Symfony bridge, then the contract
+tests.
+
 ## Already in place (skeleton)
 
 - `SpecVersion::CURRENT` (`1.5.0`, the version of the PDF; production Swagger is 1.5.1, see api-reference §2.10).

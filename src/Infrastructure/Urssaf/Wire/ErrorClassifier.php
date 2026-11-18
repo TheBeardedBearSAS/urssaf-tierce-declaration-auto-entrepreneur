@@ -92,7 +92,7 @@ final class ErrorClassifier
 
     private static function classifyCodes(ApiErrors $errors): RejectionKind
     {
-        $kinds = array_map(self::kindOf(...), $errors->all());
+        $kinds = array_map(static fn(ApiError $error): RejectionKind => self::kindOf($error), $errors->all());
 
         foreach (self::PRIORITY as $kind) {
             if (\in_array($kind, $kinds, true)) {
