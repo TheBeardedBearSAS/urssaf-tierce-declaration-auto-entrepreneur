@@ -30,7 +30,7 @@ final class SlidingWindowRateLimiter implements RateLimiter
     public const DEFAULT_LIMIT = 300;
     public const DEFAULT_WINDOW_SECONDS = 60;
 
-    /** @var array<string, array<int, int>> call instants (UNIX timestamps) per tenant identifier */
+    /** @var array<string, array<int, int>> calls per second (UNIX timestamp => count) per tenant identifier */
     private array $calls = [];
 
     /**
@@ -60,13 +60,14 @@ final class SlidingWindowRateLimiter implements RateLimiter
         $recent = array_filter(
             $this->calls[$tenantId->value()] ?? [],
             static fn(int $instant): bool => $instant > $windowStart,
+            \ARRAY_FILTER_USE_KEY,
         );
 
-        if (\count($recent) >= $this->limit) {
-            throw RateLimitExceeded::forOperation($operation, min([$now, ...$recent]) + $this->windowSeconds - $now);
+        if (array_sum($recent) >= $this->limit) {
+            throw RateLimitExceeded::forOperation($operation, min([$now, ...array_keys($recent)]) + $this->windowSeconds - $now);
         }
 
-        $recent[] = $now;
+        $recent[$now] = ($recent[$now] ?? 0) + 1;
         $this->calls[$tenantId->value()] = $recent;
     }
 }
