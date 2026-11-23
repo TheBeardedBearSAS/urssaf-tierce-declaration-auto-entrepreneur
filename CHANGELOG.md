@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- CI: PHP 8.6 joins the test matrix as an experimental (non-blocking) job, without coverage: no coverage driver supports
+  8.6 yet (Xdebug 3.5.3 requires PHP < 8.6, pcov does not build). The development image installs `mbstring` when the
+  base image lacks it and skips the pecl extensions when pecl is absent (PHP 8.6 base image). The 8.6 job with the
+  lowest dependencies is expected to fail: PHP 8.6 deprecates `spl_object_hash()`, which the lowest allowed versions of
+  `doctrine/event-manager`, `doctrine/persistence` and `symfony/doctrine-bridge` still call (the SDK itself does not).
+
 ### Changed
 
 - `SlidingWindowRateLimiter` counts the calls per second instead of keeping one entry per call: a check costs the number of distinct seconds in the window, not the number of calls (same quota, window and retry delay). Filling a large quota no longer slows Xdebug path coverage down quadratically.
